@@ -29,7 +29,8 @@
 %token COLON ASSIGN ID FOR FUNCTION ENDFUNCTION HIDDEN HIDDENFUNCTION
 %token PLUS MINUS RDIVIDE LDIVIDE TIMES POWER EQ NE LT GT LE GE
 %token SELECT SWITCH OTHERWISE CASE TRY CATCH RETURN BREAK CONTINUE
-%token BOOLTRUE BOOLFALSE QUOTE AND ANDAND NOT DOT
+%token BOOLTRUE BOOLFALSE QUOTE AND ANDAND NOT DOT DOTTIMES DOTLDIVIDE 
+%token DOTRDIVIDE DOTPOWER
 %token<float> VARINT
 %token<float> VARFLOAT
 %token<float> NUM
@@ -137,7 +138,6 @@ recursiveExpression :
 | expression expressionLineBreak                             { [$1] }
 
 expressionLineBreak :
-| EOF                                         { }
 | SEMI                                        { }
 | COMMA                                       { }
 | EOL                                         { }
@@ -866,6 +866,38 @@ operation :
                                                                opExp_right = $3 ;
                                                                opExp_kind  = OpExp_invalid_kind } in
                                                   create_exp oploc (MathExp (OpExp (oper,args))) }
+| variable DOTTIMES variable                    { let oploc_st = Parsing.rhs_start_pos 1 in
+                                                  let oploc_end = Parsing.rhs_end_pos 3 in
+                                                  let oploc = create_loc oploc_st oploc_end in
+                                                  let oper = OpExp_dottimes in
+                                                  let args = { opExp_left  = $1 ;
+                                                               opExp_right = $3 ;
+                                                               opExp_kind  = OpExp_invalid_kind } in
+                                                  create_exp oploc (MathExp (OpExp (oper,args))) }
+| variable DOTTIMES functionCall                { let oploc_st = Parsing.rhs_start_pos 1 in
+                                                  let oploc_end = Parsing.rhs_end_pos 3 in
+                                                  let oploc = create_loc oploc_st oploc_end in
+                                                  let oper = OpExp_dottimes in
+                                                  let args = { opExp_left  = $1 ;
+                                                               opExp_right = $3 ;
+                                                               opExp_kind  = OpExp_invalid_kind } in
+                                                  create_exp oploc (MathExp (OpExp (oper,args))) }
+| functionCall DOTTIMES variable                { let oploc_st = Parsing.rhs_start_pos 1 in
+                                                  let oploc_end = Parsing.rhs_end_pos 3 in
+                                                  let oploc = create_loc oploc_st oploc_end in
+                                                  let oper = OpExp_dottimes in
+                                                  let args = { opExp_left  = $1 ;
+                                                               opExp_right = $3 ;
+                                                               opExp_kind  = OpExp_invalid_kind } in
+                                                  create_exp oploc (MathExp (OpExp (oper,args))) }
+| functionCall DOTTIMES functionCall            { let oploc_st = Parsing.rhs_start_pos 1 in
+                                                  let oploc_end = Parsing.rhs_end_pos 3 in
+                                                  let oploc = create_loc oploc_st oploc_end in
+                                                  let oper = OpExp_dottimes in
+                                                  let args = { opExp_left  = $1 ;
+                                                               opExp_right = $3 ;
+                                                               opExp_kind  = OpExp_invalid_kind } in
+                                                  create_exp oploc (MathExp (OpExp (oper,args))) }
 /* '/'   './'   './.'   '/.' */
 | variable RDIVIDE variable                     { let oploc_st = Parsing.rhs_start_pos 1 in
                                                   let oploc_end = Parsing.rhs_end_pos 3 in
@@ -895,6 +927,38 @@ operation :
                                                   let oploc_end = Parsing.rhs_end_pos 3 in
                                                   let oploc = create_loc oploc_st oploc_end in
                                                   let oper = OpExp_rdivide in
+                                                  let args = { opExp_left  = $1 ;
+                                                               opExp_right = $3 ;
+                                                               opExp_kind  = OpExp_invalid_kind } in
+                                                  create_exp oploc (MathExp (OpExp (oper,args))) }
+| variable DOTRDIVIDE variable                  { let oploc_st = Parsing.rhs_start_pos 1 in
+                                                  let oploc_end = Parsing.rhs_end_pos 3 in
+                                                  let oploc = create_loc oploc_st oploc_end in
+                                                  let oper = OpExp_dotrdivide in
+                                                  let args = { opExp_left  = $1 ;
+                                                               opExp_right = $3 ;
+                                                               opExp_kind  = OpExp_invalid_kind } in
+                                                  create_exp oploc (MathExp (OpExp (oper,args))) }
+| variable DOTRDIVIDE functionCall              { let oploc_st = Parsing.rhs_start_pos 1 in
+                                                  let oploc_end = Parsing.rhs_end_pos 3 in
+                                                  let oploc = create_loc oploc_st oploc_end in
+                                                  let oper = OpExp_dotrdivide in
+                                                  let args = { opExp_left  = $1 ;
+                                                               opExp_right = $3 ;
+                                                               opExp_kind  = OpExp_invalid_kind } in
+                                                  create_exp oploc (MathExp (OpExp (oper,args))) }
+| functionCall DOTRDIVIDE variable              { let oploc_st = Parsing.rhs_start_pos 1 in
+                                                  let oploc_end = Parsing.rhs_end_pos 3 in
+                                                  let oploc = create_loc oploc_st oploc_end in
+                                                  let oper = OpExp_dotrdivide in
+                                                  let args = { opExp_left  = $1 ;
+                                                               opExp_right = $3 ;
+                                                               opExp_kind  = OpExp_invalid_kind } in
+                                                  create_exp oploc (MathExp (OpExp (oper,args))) }
+| functionCall DOTRDIVIDE functionCall          { let oploc_st = Parsing.rhs_start_pos 1 in
+                                                  let oploc_end = Parsing.rhs_end_pos 3 in
+                                                  let oploc = create_loc oploc_st oploc_end in
+                                                  let oper = OpExp_dotrdivide in
                                                   let args = { opExp_left  = $1 ;
                                                                opExp_right = $3 ;
                                                                opExp_kind  = OpExp_invalid_kind } in
@@ -932,35 +996,39 @@ operation :
                                                                opExp_right = $3 ;
                                                                opExp_kind  = OpExp_invalid_kind } in
                                                   create_exp oploc (MathExp (OpExp (oper,args))) }
-
-| MINUS variable                                { let minloc_st = Parsing.rhs_start_pos 1 in
-                                                  let minloc_end = Parsing.rhs_end_pos 2 in
-                                                  let oploc = create_loc minloc_st minloc_end in
-                                                  let oper = OpExp_unaryMinus in
-                                                  let dummy_exp = DoubleExp 
-                                                    { doubleExp_value = 0.0;
-                                                      doubleExp_bigDouble = () } in
-                                                  let left = create_exp dummy_loc (ConstExp dummy_exp) in
-                                                  let right = $2 in
-                                                  let args = { opExp_left  = left ;
-                                                               opExp_right = right;
+| variable DOTLDIVIDE variable                  { let oploc_st = Parsing.rhs_start_pos 1 in
+                                                  let oploc_end = Parsing.rhs_end_pos 3 in
+                                                  let oploc = create_loc oploc_st oploc_end in
+                                                  let oper = OpExp_dotldivide in
+                                                  let args = { opExp_left  = $1 ;
+                                                               opExp_right = $3 ;
                                                                opExp_kind  = OpExp_invalid_kind } in
                                                   create_exp oploc (MathExp (OpExp (oper,args))) }
-| MINUS functionCall                            { let minloc_st = Parsing.rhs_start_pos 1 in
-                                                  let minloc_end = Parsing.rhs_end_pos 2 in
-                                                  let oploc = create_loc minloc_st minloc_end in
-                                                  let oper = OpExp_unaryMinus in
-                                                  let dummy_exp = DoubleExp 
-                                                    { doubleExp_value = 0.0;
-                                                      doubleExp_bigDouble = () } in
-                                                  let left = create_exp dummy_loc (ConstExp dummy_exp) in
-                                                  let right = $2 in
-                                                  let args = { opExp_left  = left ;
-                                                               opExp_right = right;
+| variable DOTLDIVIDE functionCall              { let oploc_st = Parsing.rhs_start_pos 1 in
+                                                  let oploc_end = Parsing.rhs_end_pos 3 in
+                                                  let oploc = create_loc oploc_st oploc_end in
+                                                  let oper = OpExp_dotldivide in
+                                                  let args = { opExp_left  = $1 ;
+                                                               opExp_right = $3 ;
                                                                opExp_kind  = OpExp_invalid_kind } in
                                                   create_exp oploc (MathExp (OpExp (oper,args))) }
-| PLUS variable                                 { $2 }
-| PLUS functionCall                             { $2 }
+| functionCall DOTLDIVIDE variable              { let oploc_st = Parsing.rhs_start_pos 1 in
+                                                  let oploc_end = Parsing.rhs_end_pos 3 in
+                                                  let oploc = create_loc oploc_st oploc_end in
+                                                  let oper = OpExp_dotldivide in
+                                                  let args = { opExp_left  = $1 ;
+                                                               opExp_right = $3 ;
+                                                               opExp_kind  = OpExp_invalid_kind } in
+                                                  create_exp oploc (MathExp (OpExp (oper,args))) }
+| functionCall DOTLDIVIDE functionCall          { let oploc_st = Parsing.rhs_start_pos 1 in
+                                                  let oploc_end = Parsing.rhs_end_pos 3 in
+                                                  let oploc = create_loc oploc_st oploc_end in
+                                                  let oper = OpExp_dotldivide in
+                                                  let args = { opExp_left  = $1 ;
+                                                               opExp_right = $3 ;
+                                                               opExp_kind  = OpExp_invalid_kind } in
+                                                  create_exp oploc (MathExp (OpExp (oper,args))) }
+/* '^' '.^' '.^.' '^.' */
 | variable POWER variable                       { let powloc_st = Parsing.rhs_start_pos 1 in
                                                   let powloc_end = Parsing.rhs_end_pos 3 in
                                                   let oploc = create_loc powloc_st powloc_end in
@@ -1001,6 +1069,75 @@ operation :
                                                               opExp_right = right;
                                                               opExp_kind  = OpExp_invalid_kind } in
                                                  create_exp oploc (MathExp (OpExp (oper,args))) }
+| variable DOTPOWER variable                       { let powloc_st = Parsing.rhs_start_pos 1 in
+                                                  let powloc_end = Parsing.rhs_end_pos 3 in
+                                                  let oploc = create_loc powloc_st powloc_end in
+                                                  let oper = OpExp_dotpower in
+                                                  let left = $1 in
+                                                  let right = $3 in
+                                                  let args = { opExp_left  = left ;
+                                                               opExp_right = right;
+                                                               opExp_kind  = OpExp_invalid_kind } in
+                                                  create_exp oploc (MathExp (OpExp (oper,args))) }
+| variable DOTPOWER functionCall                   { let powloc_st = Parsing.rhs_start_pos 1 in
+                                                  let powloc_end = Parsing.rhs_end_pos 3 in
+                                                  let oploc = create_loc powloc_st powloc_end in
+                                                  let oper = OpExp_dotpower in
+                                                  let left = $1 in
+                                                  let right = $3 in
+                                                  let args = { opExp_left  = left ;
+                                                               opExp_right = right;
+                                                               opExp_kind  = OpExp_invalid_kind } in
+                                                  create_exp oploc (MathExp (OpExp (oper,args))) }
+| functionCall DOTPOWER variable		       { let powloc_st = Parsing.rhs_start_pos 1 in
+                                                 let powloc_end = Parsing.rhs_end_pos 3 in
+                                                 let oploc = create_loc powloc_st powloc_end in
+                                                 let oper = OpExp_dotpower in
+                                                 let left = $1 in
+                                                 let right = $3 in
+                                                 let args = { opExp_left  = left ;
+                                                              opExp_right = right;
+                                                              opExp_kind  = OpExp_invalid_kind } in
+                                                 create_exp oploc (MathExp (OpExp (oper,args))) }
+| functionCall DOTPOWER functionCall              { let powloc_st = Parsing.rhs_start_pos 1 in
+                                                 let powloc_end = Parsing.rhs_end_pos 3 in
+                                                 let oploc = create_loc powloc_st powloc_end in
+                                                 let oper = OpExp_dotpower in
+                                                 let left = $1 in
+                                                 let right = $3 in
+                                                 let args = { opExp_left  = left ;
+                                                              opExp_right = right;
+                                                              opExp_kind  = OpExp_invalid_kind } in
+                                                 create_exp oploc (MathExp (OpExp (oper,args))) }
+/* others */
+| MINUS variable                                { let minloc_st = Parsing.rhs_start_pos 1 in
+                                                  let minloc_end = Parsing.rhs_end_pos 2 in
+                                                  let oploc = create_loc minloc_st minloc_end in
+                                                  let oper = OpExp_unaryMinus in
+                                                  let dummy_exp = DoubleExp 
+                                                    { doubleExp_value = 0.0;
+                                                      doubleExp_bigDouble = () } in
+                                                  let left = create_exp dummy_loc (ConstExp dummy_exp) in
+                                                  let right = $2 in
+                                                  let args = { opExp_left  = left ;
+                                                               opExp_right = right;
+                                                               opExp_kind  = OpExp_invalid_kind } in
+                                                  create_exp oploc (MathExp (OpExp (oper,args))) }
+| MINUS functionCall                            { let minloc_st = Parsing.rhs_start_pos 1 in
+                                                  let minloc_end = Parsing.rhs_end_pos 2 in
+                                                  let oploc = create_loc minloc_st minloc_end in
+                                                  let oper = OpExp_unaryMinus in
+                                                  let dummy_exp = DoubleExp 
+                                                    { doubleExp_value = 0.0;
+                                                      doubleExp_bigDouble = () } in
+                                                  let left = create_exp dummy_loc (ConstExp dummy_exp) in
+                                                  let right = $2 in
+                                                  let args = { opExp_left  = left ;
+                                                               opExp_right = right;
+                                                               opExp_kind  = OpExp_invalid_kind } in
+                                                  create_exp oploc (MathExp (OpExp (oper,args))) }
+| PLUS variable                                 { $2 }
+| PLUS functionCall                             { $2 }
 | variable QUOTE			       { let tloc_st = Parsing.rhs_start_pos 1 in
                                                  let tloc_end = Parsing.rhs_end_pos 2 in
                                                  let tloc = create_loc tloc_st tloc_end in
@@ -1502,7 +1639,7 @@ whileBody :
                           let loc = 
                             create_loc off_st off_end in
                           create_exp loc (SeqExp []) }
-| expression            { $1 }
+| expressions           { $1 }
 
 whileConditionBreak :
 | COMMA                 { }

@@ -3,12 +3,27 @@
   open Lexing
   open ScilabParser
 
+  let last_token = ref EOF
+
+  let return_token tok =
+    last_token := tok;
+    tok
+
+  let is_transposable () = match !last_token with
+    | ID _ | RBRACK | RBRACE | VARINT _ | VARFLOAT _
+    | NUM _ | BOOLTRUE | BOOLFALSE -> true
+    | _ -> false
+
+  let is_EOL () = match !last_token with
+    | EOL -> true
+    | _ -> false
+
+
   let end_cmt lexbuf =
     lexbuf.lex_curr_pos <- lexbuf.lex_start_pos;
     lexbuf.lex_curr_p <- { lexbuf.lex_curr_p with
       pos_cnum = lexbuf.lex_start_p.pos_cnum;
     }
-
 
   let print_pos pos =
     Printf.printf "%i %i %i" pos.pos_lnum pos.pos_bol pos.pos_cnum
@@ -23,14 +38,16 @@
 
   let str = ref ""
 
-  let is_transposable = ref false
-
 }
 
-let newline = ('\010' | '\013' | "\013\010")
-let blank = [' ' '\009' '\012']
-
 let spaces    = [' ' '\t']
+
+
+let newline   = ('\010' | '\013' | "\013\010")
+let blankline = spaces+ newline
+let empty     = spaces | [','';']
+let emptyline = newline empty+ newline
+let next      = ".." | "..."
 
 let integer   = ['0'-'9']+
 let number    = ['0'-'9']+(".")['0'-'9']*
@@ -109,99 +126,106 @@ let assign = "="
 
 
 rule token = parse
-  | blank                        { is_transposable := false; token lexbuf }
-  | newline                      { (* Printf.printf "EOL\n"; *) is_transposable := false; Lexing.new_line lexbuf; EOL}
-  | startlinecomment             { is_transposable := false; str_cmt := ""; comment lexbuf }
-  | dquote                       { is_transposable := false; str := ""; doublestr lexbuf }
-  | quote                        { if !is_transposable 
-                                   then QUOTE 
+  | spaces                       { token lexbuf }
+  | blankline                    { if (is_EOL ()) then token lexbuf else return_token EOL }
+  | newline                      { if (is_EOL ()) then token lexbuf else return_token EOL }
+  | emptyline                    { if (is_EOL ()) then token lexbuf else return_token EOL }
+  | startlinecomment             { str_cmt := ""; comment lexbuf }
+  | dquote                       { str := ""; doublestr lexbuf }
+  | quote                        { if (is_transposable ())
+                                   then return_token QUOTE 
                                    else begin str := ""; simplestr lexbuf end}
-  | "if"                         { is_transposable := false; IF }
-  | "then"                       { is_transposable := false; THEN }
-  | "else"                       { is_transposable := false; ELSE }
-  | "elseif"                     { is_transposable := false; ELSEIF }
-  | "end"                        { is_transposable := false; END }
-  | "select"                     { is_transposable := false; SELECT }
-  | "switch"                     { is_transposable := false; SWITCH }
-  | "otherwise"                  { is_transposable := false; OTHERWISE }
-  | "case"                       { is_transposable := false; CASE }
-  | "while"                      { is_transposable := false; WHILE }
-  | "do"                         { is_transposable := false; DO }
-  | "try"                        { is_transposable := false; TRY }
-  | "catch"                      { is_transposable := false; CATCH }
-  | "return"                     { is_transposable := false; RETURN }
-  | "break"                      { is_transposable := false; BREAK }
-  | "continue"                   { is_transposable := false; CONTINUE }
-  | "="                          { is_transposable := false; ASSIGN }
-  | "for"                        { is_transposable := false; FOR }
-  | "hidden"                     { is_transposable := false; HIDDEN }
-  | "function"                   { is_transposable := false; FUNCTION }
-  | "#function"                  { is_transposable := false; HIDDENFUNCTION }
-  | "endfunction"                { is_transposable := false; ENDFUNCTION }
-  | dot                          { is_transposable := false; DOT }
-  | plus                         { is_transposable := false; PLUS }
-  | minus                        { is_transposable := false; MINUS }
-  | rdivide                      { is_transposable := false; RDIVIDE }
-  | ldivide                      { is_transposable := false; LDIVIDE }
-  | times                        { is_transposable := false; TIMES }
-  | power                        { is_transposable := false; POWER }
-  | equal                        { is_transposable := false; EQ }
-  | notequal                     { is_transposable := false; NE }
-  | lowerthan                    { is_transposable := false; LT }
-  | greaterthan                  { is_transposable := false; GT }
-  | lowerequal                   { is_transposable := false; LE }
-  | greaterequal                 { is_transposable := false; GE }
-  | comma                        { is_transposable := false; COMMA }
-  | semicolon                    { is_transposable := false; SEMI }
-  | colon                        { is_transposable := false; COLON }
-  | integer as inum              { is_transposable := true;
-                                   let num = float_of_string inum in
-                                   Printf.printf "varint[%f]" num; VARINT num }
-  | number as nnum               { is_transposable := true;
-                                   let num = float_of_string nnum in
-                                   NUM num }
-  | little as lnum               { is_transposable := true;
-                                   let num = float_of_string lnum in
-                                   NUM num }
-  | lparen                       { is_transposable := false; LPAREN }
-  | rparen                       { is_transposable := true; RPAREN }
-  | lbrace                       { is_transposable := false; LBRACE }
-  | rbrace                       { is_transposable := true; RBRACE }
-  | lbrack                       { is_transposable := false; LBRACK }
-  | rbrack                       { is_transposable := true; RBRACK }
-  | dollar                       { is_transposable := false; DOLLAR }
-  | boolnot                      { is_transposable := false; NOT }
-  | booltrue                     { is_transposable := true; BOOLTRUE }
-  | boolfalse                    { is_transposable := true; BOOLFALSE }
-  | booland                      { is_transposable := false; AND }
-  | boolandand                   { is_transposable := false; ANDAND }
-  | id as str                    { is_transposable := true;Printf.printf "ID[%s]" str; ID str }
-  | eof                          { is_transposable := false; EOF }
+  | "if"                         { return_token IF }
+  | "then"                       { return_token THEN }
+  | "else"                       { return_token ELSE }
+  | "elseif"                     { return_token ELSEIF }
+  | "end"                        { return_token END }
+  | "select"                     { return_token SELECT }
+  | "switch"                     { return_token SWITCH }
+  | "otherwise"                  { return_token OTHERWISE }
+  | "case"                       { return_token CASE }
+  | "while"                      { return_token WHILE }
+  | "do"                         { return_token DO }
+  | "try"                        { return_token TRY }
+  | "catch"                      { return_token CATCH }
+  | "return"                     { return_token RETURN }
+  | "break"                      { return_token BREAK }
+  | "continue"                   { return_token CONTINUE }
+  | "="                          { return_token ASSIGN }
+  | "for"                        { return_token FOR }
+  | "hidden"                     { return_token HIDDEN }
+  | "function"                   { return_token FUNCTION }
+  | "#function"                  { return_token HIDDENFUNCTION }
+  | "endfunction"                { return_token ENDFUNCTION }
+  | dot                          { return_token DOT }
+  | dottimes                     { return_token DOTTIMES }
+  | dotpower                     { return_token DOTPOWER }
+  | dotldivide                   { return_token DOTLDIVIDE }
+  | dotrdivide                   { return_token DOTRDIVIDE }
+  | next newline                 { token lexbuf }
+  | plus                         { return_token PLUS }
+  | minus                        { return_token MINUS }
+  | rdivide                      { return_token RDIVIDE }
+  | ldivide                      { return_token LDIVIDE }
+  | times                        { return_token TIMES }
+  | power                        { return_token POWER }
+  | equal                        { return_token EQ }
+  | notequal                     { return_token NE }
+  | lowerthan                    { return_token LT }
+  | greaterthan                  { return_token GT }
+  | lowerequal                   { return_token LE }
+  | greaterequal                 { return_token GE }
+  | comma                        { return_token COMMA }
+  | semicolon                    { return_token SEMI }
+  | colon                        { return_token COLON }
+  | integer as inum              { let num = float_of_string inum in
+                                   Printf.printf "varint[%f]" num; 
+                                   return_token (VARINT num) }
+  | number as nnum               { let num = float_of_string nnum in
+                                   return_token (NUM num) }
+  | little as lnum               { let num = float_of_string lnum in
+                                   return_token (NUM num)}
+  | lparen                       { return_token LPAREN }
+  | rparen                       { return_token RPAREN }
+  | lbrace                       { return_token LBRACE }
+  | rbrace                       { return_token RBRACE }
+  | lbrack                       { return_token LBRACK }
+  | rbrack                       { return_token RBRACK }
+  | dollar                       { return_token DOLLAR }
+  | boolnot                      { return_token NOT }
+  | booltrue                     { return_token BOOLTRUE }
+  | boolfalse                    { return_token BOOLFALSE }
+  | booland                      { return_token AND }
+  | boolandand                   { return_token ANDAND }
+  | id as str                    { Printf.printf "ID[%s]" str; return_token (ID str) }
+  | eof                          { return_token EOF }
   | _ as c                       { Printf.printf "Lexing error : Unknow character \'%c\'" c;exit 1}
 
 and comment = parse
-  | newline                      { (* Printf.printf "//%s" !str_cmt; *) end_cmt lexbuf; COMMENT !str_cmt}
-  | eof                          { COMMENT !str_cmt ; }
+  | newline                      { end_cmt lexbuf; return_token (COMMENT !str_cmt)}
+  | eof                          { return_token (COMMENT !str_cmt) }
   | _ as c                       { str_cmt := !str_cmt^(String.make 1 c); comment lexbuf }
 
 and doublestr = parse
-  | dquote                       { STR !str}
+  | dquote                       { return_token (STR !str) }
   | dquote dquote                { str := !str^"\""; doublestr lexbuf }
   | dquote quote                 { str := !str^"\'"; doublestr lexbuf }
   | quote dquote                 { str := !str^"\""; doublestr lexbuf }
   | quote quote                  { str := !str^"\'"; doublestr lexbuf }
   | quote                        { failwith "Error : Heterogeneous string detected, starting with \" and ending with \'." }
+  | next newline                 { doublestr lexbuf }
   | newline                      { failwith "Error : unexpected newline in a string." }
   | eof                          { failwith "Error : unexpected end of file in a string." }
   | _ as c                       { str := !str^(String.make 1 c); doublestr lexbuf }
 
 and simplestr = parse
-  | quote                        { STR !str}
+  | quote                        { return_token (STR !str)}
   | dquote dquote                { str := !str^"\""; simplestr lexbuf }
   | dquote quote                 { str := !str^"\'"; simplestr lexbuf }
   | quote dquote                 { str := !str^"\""; simplestr lexbuf }
   | quote quote                  { str := !str^"\'"; simplestr lexbuf }
   | dquote                       { failwith "Error : Heterogeneous string detected, starting with \' and ending with \"." }
+  | next newline                 { simplestr lexbuf }
   | newline                      { failwith "Error : unexpected newline in a string." }
   | eof                          { failwith "Error : unexpected end of file in a string." }
   | _ as c                       { str := !str^(String.make 1 c); simplestr lexbuf }
