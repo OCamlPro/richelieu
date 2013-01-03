@@ -78,6 +78,8 @@ let booltrue   = "%t" | "%T"
 let boolfalse  = "%f" | "%F"
 let booland    = "&"
 let boolandand = "&&"
+let boolor     = "|"
+let booloror   = "||"
 
 let lbrack = "["
 let rbrack = "]"
@@ -197,6 +199,8 @@ rule token = parse
   | boolfalse                    { return_token BOOLFALSE }
   | booland                      { return_token AND }
   | boolandand                   { return_token ANDAND }
+  | boolor                       { return_token OR }
+  | booloror                     { return_token OROR }
   | id as str                    { Printf.printf "ID[%s]" str; return_token (ID str) }
   | eof                          { return_token EOF }
   | _ as c                       { Printf.printf "Lexing error : Unknow character \'%c\'" c;exit 1}

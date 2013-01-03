@@ -30,7 +30,7 @@
 %token PLUS MINUS RDIVIDE LDIVIDE TIMES POWER EQ NE LT GT LE GE
 %token SELECT SWITCH OTHERWISE CASE TRY CATCH RETURN BREAK CONTINUE
 %token BOOLTRUE BOOLFALSE QUOTE AND ANDAND NOT DOT DOTTIMES DOTLDIVIDE 
-%token DOTRDIVIDE DOTPOWER
+%token DOTRDIVIDE DOTPOWER OR OROR
 %token<float> VARINT
 %token<float> VARFLOAT
 %token<float> NUM
@@ -563,6 +563,39 @@ comparison :
                                                   let cmploc_end = Parsing.rhs_end_pos 3 in
                                                   let cmploc = create_loc cmploc_st cmploc_end in
                                                   let oper = OpLogicalExp_logicalAnd in
+                                                  let args = { opExp_left  = $1 ;
+                                                               opExp_right = $3 ;
+                                                               opExp_kind  = OpExp_invalid_kind } in
+                                                  create_exp cmploc (MathExp (LogicalOpExp (oper,args))) }
+/* | */
+| variable OR variable                         { let cmploc_st = Parsing.rhs_start_pos 1 in
+                                                  let cmploc_end = Parsing.rhs_end_pos 3 in
+                                                  let cmploc = create_loc cmploc_st cmploc_end in
+                                                  let oper = OpLogicalExp_logicalOr in
+                                                  let args = { opExp_left  = $1 ;
+                                                               opExp_right = $3 ;
+                                                               opExp_kind  = OpExp_invalid_kind } in
+                                                  create_exp cmploc (MathExp (LogicalOpExp (oper,args))) }
+| variable OR functionCall                     { let cmploc_st = Parsing.rhs_start_pos 1 in
+                                                  let cmploc_end = Parsing.rhs_end_pos 3 in
+                                                  let cmploc = create_loc cmploc_st cmploc_end in
+                                                  let oper = OpLogicalExp_logicalOr in
+                                                  let args = { opExp_left  = $1 ;
+                                                               opExp_right = $3 ;
+                                                               opExp_kind  = OpExp_invalid_kind } in
+                                                  create_exp cmploc (MathExp (LogicalOpExp (oper,args))) }
+| functionCall OR variable                     { let cmploc_st = Parsing.rhs_start_pos 1 in
+                                                  let cmploc_end = Parsing.rhs_end_pos 3 in
+                                                  let cmploc = create_loc cmploc_st cmploc_end in
+                                                  let oper = OpLogicalExp_logicalOr in
+                                                  let args = { opExp_left  = $1 ;
+                                                               opExp_right = $3 ;
+                                                               opExp_kind  = OpExp_invalid_kind } in
+                                                  create_exp cmploc (MathExp (LogicalOpExp (oper,args))) }
+| functionCall OR functionCall                 { let cmploc_st = Parsing.rhs_start_pos 1 in
+                                                  let cmploc_end = Parsing.rhs_end_pos 3 in
+                                                  let cmploc = create_loc cmploc_st cmploc_end in
+                                                  let oper = OpLogicalExp_logicalOr in
                                                   let args = { opExp_left  = $1 ;
                                                                opExp_right = $3 ;
                                                                opExp_kind  = OpExp_invalid_kind } in
