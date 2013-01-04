@@ -29,8 +29,8 @@
 %token COLON ASSIGN ID FOR FUNCTION ENDFUNCTION HIDDEN HIDDENFUNCTION
 %token PLUS MINUS RDIVIDE LDIVIDE TIMES POWER EQ NE LT GT LE GE
 %token SELECT SWITCH OTHERWISE CASE TRY CATCH RETURN BREAK CONTINUE
-%token BOOLTRUE BOOLFALSE QUOTE AND ANDAND NOT DOT DOTTIMES DOTLDIVIDE 
-%token DOTRDIVIDE DOTPOWER OR OROR KRONTIMES CONTROLTIMES
+%token BOOLTRUE BOOLFALSE QUOTE AND ANDAND NOT DOT DOTQUOTE DOTTIMES
+%token DOTLDIVIDE DOTRDIVIDE DOTPOWER OR OROR KRONTIMES CONTROLTIMES 
 %token<float> VARINT
 %token<float> VARFLOAT
 %token<float> NUM
@@ -1240,6 +1240,24 @@ operation :
                                                  let tloc = create_loc tloc_st tloc_end in
                                                  let texp = { transposeExp_exp = $1;
                                                               transposeExp_conjugate = Conjugate} in
+                                                 create_exp tloc (MathExp (TransposeExp texp)) }
+| functionCall QUOTE			       { let tloc_st = Parsing.rhs_start_pos 1 in
+                                                 let tloc_end = Parsing.rhs_end_pos 2 in
+                                                 let tloc = create_loc tloc_st tloc_end in
+                                                 let texp = { transposeExp_exp = $1;
+                                                              transposeExp_conjugate = Conjugate} in
+                                                 create_exp tloc (MathExp (TransposeExp texp)) }
+| variable DOTQUOTE			       { let tloc_st = Parsing.rhs_start_pos 1 in
+                                                 let tloc_end = Parsing.rhs_end_pos 2 in
+                                                 let tloc = create_loc tloc_st tloc_end in
+                                                 let texp = { transposeExp_exp = $1;
+                                                              transposeExp_conjugate = NonConjugate} in
+                                                 create_exp tloc (MathExp (TransposeExp texp)) }
+| functionCall DOTQUOTE			       { let tloc_st = Parsing.rhs_start_pos 1 in
+                                                 let tloc_end = Parsing.rhs_end_pos 2 in
+                                                 let tloc = create_loc tloc_st tloc_end in
+                                                 let texp = { transposeExp_exp = $1;
+                                                              transposeExp_conjugate = NonConjugate} in
                                                  create_exp tloc (MathExp (TransposeExp texp)) }
 
 /*

@@ -11,7 +11,7 @@
 
   let is_transposable () = match !last_token with
     | ID _ | RBRACK | RBRACE | VARINT _ | VARFLOAT _
-    | NUM _ | BOOLTRUE | BOOLFALSE -> true
+    | RPAREN | NUM _ | BOOLTRUE | BOOLFALSE -> true
     | _ -> false
 
   let is_EOL () = match !last_token with
@@ -187,13 +187,14 @@ rule token = parse
   | "#function"                  { return_token HIDDENFUNCTION }
   | "endfunction"                { return_token ENDFUNCTION }
   | dot                          { return_token DOT }
+  | dotquote                     { return_token DOTQUOTE }
   | dottimes                     { return_token DOTTIMES }
   | dotpower                     { return_token DOTPOWER }
   | dotldivide                   { return_token DOTLDIVIDE }
   | dotrdivide                   { return_token DOTRDIVIDE }
   | krontimes                    { return_token KRONTIMES }
   | controltimes                 { return_token CONTROLTIMES }
-  | next newline                 { token lexbuf }
+  | next newline                 { newline_lex lexbuf; token lexbuf }
   | next                         { return_token EOL }
   | plus                         { return_token PLUS }
   | minus                        { return_token MINUS }
@@ -238,7 +239,7 @@ rule token = parse
   | _ as c                       { Printf.printf "Lexing error : Unknow character \'%c\'" c;exit 1}
 
 and comment = parse
-  | newline                      { newline_lex lexbuf; end_cmt lexbuf; return_token (COMMENT !str_cmt)}
+  | newline                      { newline_lex lexbuf;  end_cmt lexbuf; return_token (COMMENT !str_cmt)}
   | eof                          { return_token (COMMENT !str_cmt) }
   | _ as c                       { str_cmt := !str_cmt^(String.make 1 c); comment lexbuf }
 
@@ -249,7 +250,7 @@ and doublestr = parse
   | quote dquote                 { str := !str^"\""; doublestr lexbuf }
   | quote quote                  { str := !str^"\'"; doublestr lexbuf }
   | quote                        { failwith "Error : Heterogeneous string detected, starting with \" and ending with \'." }
-  | next newline                 { doublestr lexbuf }
+  | next newline                 { newline_lex lexbuf; doublestr lexbuf }
   | newline                      { failwith "Error : unexpected newline in a string." }
   | eof                          { failwith "Error : unexpected end of file in a string." }
   | _ as c                       { str := !str^(String.make 1 c); doublestr lexbuf }
@@ -261,7 +262,7 @@ and simplestr = parse
   | quote dquote                 { str := !str^"\""; simplestr lexbuf }
   | quote quote                  { str := !str^"\'"; simplestr lexbuf }
   | dquote                       { failwith "Error : Heterogeneous string detected, starting with \' and ending with \"." }
-  | next newline                 { simplestr lexbuf }
+  | next newline                 { newline_lex lexbuf; simplestr lexbuf }
   | newline                      { failwith "Error : unexpected newline in a string." }
   | eof                          { failwith "Error : unexpected end of file in a string." }
   | _ as c                       { str := !str^(String.make 1 c); simplestr lexbuf }
