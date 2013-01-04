@@ -25,6 +25,13 @@
       pos_cnum = lexbuf.lex_start_p.pos_cnum;
     }
 
+  (** xd-y -> xe-y
+      xD-y -> xe-y **)
+  let convert_scientific_notation str =
+    let regexp = Str.regexp "['d''D']" in
+    Str.global_replace regexp "e" str
+    
+
   let print_pos pos =
     Printf.printf "%i %i %i" pos.pos_lnum pos.pos_bol pos.pos_cnum
 
@@ -52,6 +59,10 @@ let next      = ".." | "..."
 let integer   = ['0'-'9']+
 let number    = ['0'-'9']+(".")['0'-'9']*
 let little    = (".")['0'-'9']+
+
+let mantise   = little | integer | number
+let exposant  = ['+''-']? integer
+let floating  =  mantise ['d''e''D''e'] exposant
 
 let utf2  = ['\xC2'-'\xDF']['\x80'-'\xBF']
 
@@ -124,6 +135,14 @@ let greaterthan	 = ">"
 let lowerequal   = "<="
 let greaterequal = ">="
 
+let krontimes   = ".*."
+let kronrdivide = "./."
+let kronldivide = ".\\."
+
+let controltimes   = "*." [^'0'-'9']
+let controlrdivide = "/." [^'0'-'9']
+let controlldivide = "\\." [^'0'-'9']
+
 let assign = "="
 
 
@@ -164,7 +183,10 @@ rule token = parse
   | dotpower                     { return_token DOTPOWER }
   | dotldivide                   { return_token DOTLDIVIDE }
   | dotrdivide                   { return_token DOTRDIVIDE }
+  | krontimes                    { return_token KRONTIMES }
+  | controltimes                 { return_token CONTROLTIMES }
   | next newline                 { token lexbuf }
+  | next                         { return_token EOL }
   | plus                         { return_token PLUS }
   | minus                        { return_token MINUS }
   | rdivide                      { return_token RDIVIDE }
@@ -181,12 +203,14 @@ rule token = parse
   | semicolon                    { return_token SEMI }
   | colon                        { return_token COLON }
   | integer as inum              { let num = float_of_string inum in
-                                   Printf.printf "varint[%f]" num; 
+                                   Printf.printf "varint[%f]" num;
                                    return_token (VARINT num) }
   | number as nnum               { let num = float_of_string nnum in
                                    return_token (NUM num) }
   | little as lnum               { let num = float_of_string lnum in
-                                   return_token (NUM num)}
+                                   return_token (NUM num) }
+  | floating as float            { let f =(float_of_string (convert_scientific_notation float)) in
+                                   NUM f }
   | lparen                       { return_token LPAREN }
   | rparen                       { return_token RPAREN }
   | lbrace                       { return_token LBRACE }
