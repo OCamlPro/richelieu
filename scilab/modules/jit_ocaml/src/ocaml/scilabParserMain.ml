@@ -3,26 +3,35 @@ let test_flag = ref false
 let args = [("-t", Arg.Unit (fun () -> test_flag := true), ": run tests")]
 let usage = "Usage: ./main -t [fichier]  (stdin par default)"
 
+let print_exn_infos =
+  Printf.printf " -> Exception at token : %s (line %i, charactere %i) \n"
+
 let run_test file =
   let ch = if file = "" then stdin else open_in file in
+  let lexbuf = Lexing.from_channel ch in
   try
-    let lexbuf = Lexing.from_channel ch in
     let ast = ScilabParser.program ScilabLexer.token lexbuf in
     begin
       match ast with
-        | ScilabAst.Exp exp -> print_endline (ScilabAstPrinter.to_string exp)
+        | ScilabAst.Exp exp -> print_endline (* (ScilabAstPrinter.to_string exp) *) " -> OK\n"
         | _ -> ()
     end;
-    flush stdout
-  with Not_found ->
-    Printf.printf "catch exn\n"
+    flush stdout;
+    close_in ch
+  with _ ->
+    let curr = lexbuf.Lexing.lex_curr_p in
+    let line = curr.Lexing.pos_lnum in
+    let cnum = curr.Lexing.pos_cnum - curr.Lexing.pos_bol in
+    let tok = Lexing.lexeme lexbuf in
+    print_exn_infos tok line cnum;
+    close_in ch
 
 let run_tests dirname =
   let files = Sys.readdir dirname in
-  Printf.printf "# tests to run : %i\n\n" (Array.length files);
+  Printf.printf "# tests to run in %s : %i\n\n" dirname (Array.length files);
   Array.iter (fun file ->
     let file = Filename.concat dirname file in
-    Printf.printf "Testing %s :\n" file;
+    Printf.printf "Testing %s :" file;
     if Filename.check_suffix file ".sci" then
       run_test file
   ) files
@@ -35,7 +44,10 @@ let _ =
       let dir_tests =
         ["test/";
          (* "/home/michael/dev_sci/richelieu/code_samples/declarations/"; *)
-         (* "../../test/good/"; *)] in
+         (* "/home/michael/dev_sci/richelieu/code_samples/scoping/"; *)
+         (* "/home/michael/dev_sci/richelieu/code_samples/slow_code/"; *)
+         (* "/home/michael/dev_sci/richelieu/code_samples/trick/"; *)
+         "../../test/good/";] in
       List.iter (run_tests) dir_tests
     end
   else run_test !file

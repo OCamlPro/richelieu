@@ -18,6 +18,10 @@
     | EOL -> true
     | _ -> false
 
+ let newline_lex lexbuf =
+    let pos = lexbuf.lex_curr_p in
+    lexbuf.lex_curr_p <-
+      { pos with pos_lnum = pos.pos_lnum + 1; pos_bol = pos.pos_cnum }
 
   let end_cmt lexbuf =
     lexbuf.lex_curr_pos <- lexbuf.lex_start_pos;
@@ -148,9 +152,13 @@ let assign = "="
 
 rule token = parse
   | spaces                       { token lexbuf }
-  | blankline                    { if (is_EOL ()) then token lexbuf else return_token EOL }
-  | newline                      { if (is_EOL ()) then token lexbuf else return_token EOL }
-  | emptyline                    { if (is_EOL ()) then token lexbuf else return_token EOL }
+  | blankline                    { newline_lex lexbuf;
+                                   if (is_EOL ()) then token lexbuf else return_token EOL }
+  | newline                      { newline_lex lexbuf;
+                                   if (is_EOL ()) then token lexbuf else return_token EOL }
+  | emptyline                    { newline_lex lexbuf;
+                                   newline_lex lexbuf;
+                                   if (is_EOL ()) then token lexbuf else return_token EOL }
   | startlinecomment             { str_cmt := ""; comment lexbuf }
   | dquote                       { str := ""; doublestr lexbuf }
   | quote                        { if (is_transposable ())
@@ -203,7 +211,7 @@ rule token = parse
   | semicolon                    { return_token SEMI }
   | colon                        { return_token COLON }
   | integer as inum              { let num = float_of_string inum in
-                                   Printf.printf "varint[%f]" num;
+                                   (* Printf.printf "varint[%f]" num; *)
                                    return_token (VARINT num) }
   | number as nnum               { let num = float_of_string nnum in
                                    return_token (NUM num) }
@@ -225,12 +233,12 @@ rule token = parse
   | boolandand                   { return_token ANDAND }
   | boolor                       { return_token OR }
   | booloror                     { return_token OROR }
-  | id as str                    { Printf.printf "ID[%s]" str; return_token (ID str) }
+  | id as str                    { (* Printf.printf "ID[%s]" str; *) return_token (ID str) }
   | eof                          { return_token EOF }
   | _ as c                       { Printf.printf "Lexing error : Unknow character \'%c\'" c;exit 1}
 
 and comment = parse
-  | newline                      { end_cmt lexbuf; return_token (COMMENT !str_cmt)}
+  | newline                      { newline_lex lexbuf; end_cmt lexbuf; return_token (COMMENT !str_cmt)}
   | eof                          { return_token (COMMENT !str_cmt) }
   | _ as c                       { str_cmt := !str_cmt^(String.make 1 c); comment lexbuf }
 
