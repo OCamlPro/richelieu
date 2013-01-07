@@ -295,6 +295,8 @@ external ocpsci_getShortTypeStr_ml :
 external ocpsci_overload_getNameFromOper_ml :
   binop -> string = "ocpsci_overload_getNameFromOper_c"
 
+external ocpsci_equal_ml : t -> t -> bool =   "ocpsci_equal_c"
+external ocpsci_nequal_ml : t -> t -> bool =   "ocpsci_nequal_c"
 
 (*********************************************************************)
 (*                                                                   *)
@@ -304,6 +306,8 @@ external ocpsci_overload_getNameFromOper_ml :
 (*                                                                   *)
 (*********************************************************************)
 
+let equal = ocpsci_equal_ml
+let nequal = ocpsci_equal_ml
 
 let dummy_function _ _ _ = None
 let ocaml_functions = ref [| |]
@@ -409,7 +413,7 @@ let get_int32 t pos =
 
 let get_string t pos =
   match get_type t with
-  | RealDouble -> ocpsci_sci2ml_string_ml t pos
+  | RealString -> ocpsci_sci2ml_string_ml t pos
   | _ -> assert false
 
 let get_implicitlist t =
@@ -624,6 +628,15 @@ let generic_get_dims t =
   if isGeneric (get_type t) then
     ocpsci_generic_getDimsArray_ml t
   else assert false
+
+let set_bool t pos bool =
+  match get_type t with
+    RealBool ->
+      ocpsci_set_bool_ml t pos bool
+  | _ -> assert false
+let unsafe_set_bool = ocpsci_set_bool_ml
+
+let new_bool = ocpsci_new_bool_ml
 
 let not_exp t =
   match get_type t with

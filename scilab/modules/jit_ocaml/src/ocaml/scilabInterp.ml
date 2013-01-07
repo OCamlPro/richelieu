@@ -18,6 +18,8 @@ open ScilabAst
 
    TODO: Try to avoid copy operations, especially in loops. When is a
    copy operation really needed in Scilab ?
+
+   TODO: Check interp_one that should be replaced by interp_at_least_one
 *)
 
 module Sci = ScilabInternalType
@@ -103,6 +105,12 @@ let only_one v =
   | Some [| |] -> None
   | Some returns -> Some returns.(0)
 
+let array_rev_map f array =
+  let list = ref [] in
+  for i = Array.length array - 1 downto 0 do
+    list := f array.(i) :: !list
+  done;
+  Array.of_list !list
 
 
 (* Initialize context methods, to create empty values, and copy on
@@ -124,7 +132,7 @@ let _ =
     ScilabContext.put ctx (ScilabContext.new_symbol name) v
   ) fun_names
 
-let rec interp env exp =
+let rec interp env exp : Sci.t option =
   match exp.exp_desc with
 
   (************************************************************ TOTAL   *)
@@ -171,7 +179,7 @@ let rec interp env exp =
 
 
   | ControlExp (IfExp ifexp) ->
-    let test = interp_one env ifexp.ifExp_test in
+    let test = interp_at_least_one env ifexp.ifExp_test in
     if Sci.is_true test then
       ignore_interp env ifexp.ifExp_then
     else begin
@@ -185,7 +193,8 @@ let rec interp env exp =
   | ControlExp ( WhileExp  whileExp ) ->
     let env = { env with can_break = true; can_continue = true } in
     begin try
-            while Sci.is_true (interp_one env whileExp.whileExp_test) do
+            while Sci.is_true (interp_at_least_one env whileExp.whileExp_test)
+            do
               try
                 ignore_interp env whileExp.whileExp_body
               with ContinueExn -> ()
@@ -285,8 +294,8 @@ let rec interp env exp =
     end
 
   | MathExp (OpExp (oper, args)) ->
-    let left = interp_one env args.opExp_left in
-    let right = interp_one env args.opExp_right in
+    let left = interp_at_least_one env args.opExp_left in
+    let right = interp_at_least_one env args.opExp_right in
 
     let left = Sci.extractFullMatrix left in
     let right = Sci.extractFullMatrix right in
@@ -312,7 +321,7 @@ let rec interp env exp =
 
 
   | MathExp ( NotExp  { notExp_exp = exp } ) ->
-    Some (Sci.not_exp (interp_one env exp))
+    Some (Sci.not_exp (interp_at_least_one env exp))
 
 
   (* These ones can only happen within other constructs, in specific positions.
@@ -355,15 +364,17 @@ let rec interp env exp =
     let nexps = Array.length exps in
     if nvars <> nexps then
       failwith "ScilabInterp: incompatible number of returned arguments";
-
-    (* TODO: incorrect, arguments should be evaluated in the opposite order *)
-    let exps = Array.map (interp_one env) exps in
+    let exps = array_rev_map (interp env) exps in
     let bindings = ref [] in
     for iArg = 0 to nvars-1 do
       match vars.(iArg) with
       | { exp_desc = Var { var_desc = SimpleVar sy } } ->
-        let exp = Sci.extractFullMatrix exps.(iArg) in
-        bindings := (sy, exp) :: !bindings
+        begin match exps.(iArg) with
+          None -> ()
+        | Some res ->
+          let exp = Sci.extractFullMatrix res in
+          bindings := (sy, exp) :: !bindings
+        end
       | _ -> assert false
     done;
     raise (ReturnExn (List.rev !bindings));
@@ -386,8 +397,10 @@ let rec interp env exp =
     let rhs = match right.exp_desc with
       | ArrayListExp exps ->
         (* TODO: incorrect, arguments should be evaluated in the opposite order *)
-        Array.map (interp_one env) exps
-      | _ -> interp_rhs nvars env right in
+        array_rev_map (interp env) exps
+      | _ ->
+        Array.map (fun exp -> Some exp)
+          (interp_rhs nvars env right) in
     let nrhs = Array.length rhs in
     if nrhs < nvars &&
       nvars > 1 (* In scilab 5, it is OK to have nrhs=0, nvars=1, the variable remains undefined *)
@@ -398,11 +411,12 @@ let rec interp env exp =
       match vars.(iArg) with
       | { exp_desc = Var { var_desc = SimpleVar sy } } ->
         let ctx = ScilabContext.getInstance () in
-        let exp = rhs.(iArg) in
-        let exp = Sci.extractFullMatrix exp in
-        ScilabContext.put ctx sy exp
-
-
+        begin match rhs.(iArg) with
+          None -> ()
+        | Some exp ->
+          let exp = Sci.extractFullMatrix exp in
+          ScilabContext.put ctx sy exp
+        end
       (*
         | CellCallExp _ (* TODO *)
     (* we have to compute [c] to know what has to be modified, e.g. a.b(1) = x,
@@ -578,7 +592,7 @@ let rec interp env exp =
     end
 
   | MathExp ( LogicalOpExp ( oper ,  args )) ->
-    let left = interp_one env args.opExp_left in
+    let left = interp_at_least_one env args.opExp_left in
     let right = args.opExp_right in (* not evaluated *)
     begin
       match Sci.get_type left with
@@ -586,17 +600,81 @@ let rec interp env exp =
           Some
           begin
             match oper with
+
             | OpLogicalExp_logicalShortCutAnd ->
               if not (Sci.is_true left) then
                 Sci.bool false
-              else Sci.bool (Sci.is_true (interp_one env right))
+              else Sci.bool (Sci.is_true (interp_at_least_one env right))
+
             | OpLogicalExp_logicalShortCutOr ->
               if Sci.is_true left then
                 Sci.bool true
-              else Sci.bool (Sci.is_true (interp_one env right))
-            | OpLogicalExp_logicalAnd
-            | OpLogicalExp_logicalOr
-              -> assert false (* TODO *)
+              else Sci.bool (Sci.is_true (interp_at_least_one env right))
+
+            | OpLogicalExp_logicalAnd ->
+              let right = interp_at_least_one env right in
+              if Sci.get_type right = Sci.RealBool then
+                match left, Sci.generic_get_size left,
+                  right, Sci.generic_get_size right with
+                | _, 1,_, 1 ->
+                    Sci.bool (Sci.get_bool left 0 && Sci.get_bool right 0)
+                | bool, 1, bools, size
+                | bools, size, bool, 1 ->
+                  let res = Sci.new_bool (Sci.generic_get_dims bools) in
+                  if Sci.get_bool bool 0 then
+                    for i = 0 to size-1 do
+                      Sci.unsafe_set_bool res i (Sci.get_bool bools i)
+                    done
+                  else
+                    for i = 0 to size-1 do
+                      Sci.set_bool res i false
+                    done;
+                  res
+                | _, size, _, _ ->
+                  let dims = Sci.generic_get_dims left in
+                  if Sci.generic_get_dims right <> dims then
+                    failwith "ScilabInterp: inconsistent dimensions";
+                  let res = Sci.new_bool dims in
+                  for i = 0 to size-1 do
+                    Sci.unsafe_set_bool res i
+                      (Sci.get_bool left i && Sci.get_bool right i)
+                  done;
+                  res
+
+              else failwith "OVERLOAD" (* TODO *)
+
+            | OpLogicalExp_logicalOr ->
+
+              let right = interp_at_least_one env right in
+              if Sci.get_type right = Sci.RealBool then
+                match left, Sci.generic_get_size left,
+                  right, Sci.generic_get_size right with
+                | _, 1,_, 1 ->
+                    Sci.bool (Sci.get_bool left 0 || Sci.get_bool right 0)
+                | bool, 1, bools, size
+                | bools, size, bool, 1 ->
+                  let res = Sci.new_bool (Sci.generic_get_dims bools) in
+                  if Sci.get_bool bool 0 then
+                    for i = 0 to size-1 do
+                      Sci.set_bool res i true
+                    done
+                  else
+                    for i = 0 to size-1 do
+                      Sci.unsafe_set_bool res i (Sci.get_bool bools i)
+                    done;
+                  res
+                | _, size, _, _ ->
+                  let dims = Sci.generic_get_dims left in
+                  if Sci.generic_get_dims right <> dims then
+                    failwith "ScilabInterp: inconsistent dimensions";
+                  let res = Sci.new_bool dims in
+                  for i = 0 to size-1 do
+                    Sci.unsafe_set_bool res i
+                      (Sci.get_bool left i || Sci.get_bool right i)
+                  done;
+                  res
+
+              else failwith "OVERLOAD" (* TODO *)
           end
 
 
@@ -615,10 +693,40 @@ let rec interp env exp =
 
     end
 
+  | ControlExp ( SelectExp {
+    selectExp_selectme = selectme;
+    selectExp_cases = cases; (* { caseExp_test; caseExp_body } *)
+    selectExp_default = default (* Some (loc, seqExp) *)
+  }
+  ) ->
+    let selectme = interp env selectme in
+    begin match selectme with
+      None -> ()
+    | Some v ->
+      let rec iter v pos cases =
+        if pos < Array.length cases then
+          let { caseExp_test = test; caseExp_body = body } = cases.(pos) in
+          match interp env test with
+            None -> iter v (pos+1) cases
+          | Some vv ->
+            if Sci.equal v vv then begin
+              ignore_interp_sexp env body;
+              true (* found *)
+            end else
+              iter v (pos+1) cases
+        else false (* try default *)
+      in
+      if not ( iter v 0 cases ) then
+        match default with
+          None -> ()
+        | Some (_, default) ->
+          ignore_interp_sexp env default
+      end;
+      None
+
   (************************************************************ TODO    *)
 
   | FieldExp  _
-  | ControlExp ( SelectExp  _ )
   | ControlExp ( TryCatchExp  _ )
   | MathExp ( CellExp  _ )
   | MathExp ( TransposeExp  _ )
@@ -632,7 +740,7 @@ let rec interp env exp =
    that are expected in return. Since this only appears in a few places
    (assigns and returns) and is not propagated through other
    expressions we have a specific function to execute it. *)
-and interp_rhs expected_size env exp =
+and interp_rhs expected_size env exp : Sci.t array =
   match exp.exp_desc with
 
   (* This is supposed to be the only use case of ArrayListExp *)
@@ -699,13 +807,22 @@ and interp_sexp env list =
        assigned, or just a variable. *)
     interp_sexp env tail
 
+and ignore_interp_sexp env exp =
+  let (_ : Sci.t option) = interp_sexp env exp in
+  ()
+
 and ignore_interp env exp =
   let (_ : Sci.t option) = interp env exp in
   ()
 
-and interp_one env exp =
+and interp_one env exp : Sci.t =
   match interp env exp with
     None -> Sci.empty_double ()
+  | Some t -> t
+
+and interp_at_least_one env exp =
+  match interp env exp with
+    None -> failwith "ScilabInterp.interp_at_least_one"
   | Some t -> t
 
 let interp exp =
@@ -786,6 +903,11 @@ let _ =
       with FromToplevel ->
         Some [| Sci.double 0. |]
     );
+
+  let ctx = ScilabContext.getInstance () in
+  let macro_name = unicode_of_ascii "SCI" in
+  ScilabContext.put ctx (ScilabContext.new_symbol macro_name)
+    (Sci.string (unicode_of_ascii (Unix.getcwd ())))
 
 
 (* TODO: other functions that we need to define here, if we don't use

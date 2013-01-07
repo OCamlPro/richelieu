@@ -110,6 +110,8 @@ extern "C" {
   value ocpsci_overload_buildName2_c(value name_v, value arg1_v, value arg2_v);
   value ocpsci_getShortTypeStr_c(value val_v);
   value ocpsci_overload_getNameFromOper_c(value oper_v);
+  value ocpsci_equal_c(value left_v, value right_v);
+  value ocpsci_nequal_c(value left_v, value right_v);
 }
 
 #define Scilab_val(v) (*((types::InternalType**) Data_custom_val(v)))
@@ -1109,4 +1111,18 @@ value ocpsci_overload_getNameFromOper_c(value oper_v)
 {
   int code = Int_val(oper_v);
   return Val_wstring( Overload::getNameFromOper( OpExpOper_val(oper_v) ) );
+}
+
+value ocpsci_equal_c(value left_v, value right_v){
+  InternalType *left_s = Scilab_val( left_v );
+  InternalType *right_s = Scilab_val( right_v );
+
+  return Val_bool( *left_s == *right_s );
+}
+
+value ocpsci_nequal_c(value left_v, value right_v){
+  InternalType *left_s = Scilab_val( left_v );
+  InternalType *right_s = Scilab_val( right_v );
+
+  return Val_bool( *left_s != *right_s );
 }

@@ -133,6 +133,7 @@ val add_int8 : int32 -> int32 -> int32
 val add_int16 : int32 -> int32 -> int32
 val add_int32 : int32 -> int32 -> int32
 
+val unsafe_set_bool : t -> int -> bool -> unit
 val unsafe_set_double : t -> int -> float -> unit
 val unsafe_set_int8 : t -> int -> int32 -> unit
 val unsafe_set_int16 : t -> int -> int32 -> unit
@@ -142,6 +143,7 @@ val set_double : t -> int -> float -> unit
 val set_int8 : t -> int -> int32 -> unit
 val set_int16 : t -> int -> int32 -> unit
 val set_int32 : t -> int -> int32 -> unit
+val set_bool : t -> int -> bool -> unit
 
 
 val empty_double : unit -> t
@@ -197,4 +199,8 @@ val overload_buildName2 : string -> t -> t -> string
 val getShortTypeStr : t -> string
 val overload_getNameFromOper : binop -> string
 
+val new_bool : int array -> t
+
+val equal : t -> t -> bool
+val nequal : t -> t -> bool
 
