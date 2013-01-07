@@ -4,7 +4,7 @@ let args = [("-t", Arg.Unit (fun () -> test_flag := true), ": run tests")]
 let usage = "Usage: ./main -t [fichier]  (stdin par default)"
 
 let print_exn_infos =
-  Printf.printf " -> Exception at token : %s (line %i, character %i) \n"
+  Printf.printf " -> Exception at token : %s (line %i, character %i) \n\n"
 
 let run_test file =
   let ch = if file = "" then stdin else open_in file in
