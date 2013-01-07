@@ -9,3 +9,8 @@
 *.cmxa
 *~
 .libs
+src/yacc/scilabParser.output
+scilabParser.ml
+scilabParser.mli
+scilabLexer.ml
+scilab_parser

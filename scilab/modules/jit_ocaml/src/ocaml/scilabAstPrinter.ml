@@ -1,6 +1,6 @@
 (*
  *  Scilab ( http://www.scilab.org/ ) - This file is part of Scilab
- *  Copyright (C) 2012-2012 - OCAMLPRO INRIA - Fabrice LE FESSANT
+ *  Copyright (C) 2012-2013 - OCAMLPRO INRIA - Fabrice LE FESSANT
  *
  *  This file must be used under the terms of the CeCILL.
  *  This source file is licensed as described in the file COPYING, which
@@ -11,6 +11,7 @@
  *)
 
 open ScilabAst
+open ScilabContext (* for symbol *)
 
 let string_of_opExp_Kind  = function
   OpExp_invalid_kind -> "OpExp_invalid_kind"
@@ -70,6 +71,21 @@ let string_of_unicode s =
   done;
   Buffer.contents b
 
+let string_of_exp_desc exp_desc =
+  match exp_desc with
+  | SeqExp _ -> "SeqExp"
+  | AssignExp _ -> "AssignExp"
+  | CallExp _ -> "CallExp"
+  | CellCallExp _ -> "CellCallExp"
+  | ConstExp _ -> "ConstExp"
+  | ControlExp _ -> "ControlExp"
+  | Dec _ -> "Dec"
+  | FieldExp _ -> "FieldExp"
+  | ListExp _ -> "ListExp"
+  | MathExp _  -> "MathExp"
+  | Var _ -> "Var"
+  | ArrayListExp _ -> "ArrayListExp"
+  | AssignListExp _ -> "AssignListExp"
 
 let rec print_exp buf indent ast =
   match ast.exp_desc with
@@ -226,7 +242,8 @@ let rec print_exp buf indent ast =
         functionDec_returns;
         functionDec_body;
       } ->
-        Printf.bprintf buf "%sFunctionDec %S\n" indent (string_of_unicode functionDec_symbol);
+        Printf.bprintf buf "%sFunctionDec %S\n" indent
+          (string_of_unicode (symbol_name functionDec_symbol));
         let indent2 = indent ^ "    " in
         Printf.bprintf buf "%s  args:\n" indent;
         print_vars buf indent2 functionDec_args.arrayListVar_vars;
@@ -234,7 +251,6 @@ let rec print_exp buf indent ast =
         print_vars buf indent2 functionDec_returns.arrayListVar_vars;
         Printf.bprintf buf "%s  body:\n" indent;
         print_exp buf indent2 functionDec_body
-
     end
 
   | FieldExp { fieldExp_head; fieldExp_tail } ->
@@ -329,7 +345,8 @@ and print_vars buf indent vars =
 and print_varDec buf indent {
   varDec_name; varDec_init; varDec_kind
 } =
-  Printf.bprintf buf "%sVarDec %S (%s)\n" indent (string_of_unicode varDec_name)
+  Printf.bprintf buf "%sVarDec %S (%s)\n" indent
+    (string_of_unicode (symbol_name varDec_name))
     (match varDec_kind with
       VarDec_invalid_kind -> "invalid_kind"
     | VarDec_evaluation_kind -> "evaluation_kind"
@@ -345,7 +362,8 @@ and print_var buf indent { var_desc } =
   | DollarVar ->
     Printf.bprintf buf "%sDollarVar\n" indent
   | SimpleVar s ->
-    Printf.bprintf buf "%sSimpleVar %S\n" indent (string_of_unicode s)
+    Printf.bprintf buf "%sSimpleVar %S\n" indent
+      (string_of_unicode (symbol_name s))
   | ArrayListVar vars ->
     Printf.bprintf buf "%sArrayListVar\n" indent;
     let indent2 = indent ^ "  " in

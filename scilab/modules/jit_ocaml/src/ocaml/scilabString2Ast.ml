@@ -1,6 +1,6 @@
 (*
  *  Scilab ( http://www.scilab.org/ ) - This file is part of Scilab
- *  Copyright (C) 2012-2012 - OCAMLPRO INRIA - Fabrice LE FESSANT
+ *  Copyright (C) 2012-2013 - OCAMLPRO INRIA - Fabrice LE FESSANT
  *
  *  This file must be used under the terms of the CeCILL.
  *  This source file is licensed as described in the file COPYING, which
@@ -11,6 +11,7 @@
  *)
 
 open ScilabAst
+open ScilabContext
 
 let debug = false
 
@@ -281,7 +282,7 @@ let rec get_exp s pos =
         let symbol, pos = get_wstring s pos in
         mkexp (Var {
           var_location = loc;
-          var_desc = SimpleVar symbol;
+          var_desc = SimpleVar (new_symbol symbol);
         }) info loc, pos
 
       | 10 ->
@@ -408,6 +409,7 @@ let rec get_exp s pos =
 
       | 29 ->
         let functionDec_symbol, pos = get_Symbol s pos in
+        let functionDec_symbol = new_symbol functionDec_symbol in
         let args_loc, pos = get_location s pos in
         let returns_loc, pos = get_location s pos in
         let functionDec_body, pos = get_exp s pos in
@@ -493,6 +495,7 @@ let rec get_exp s pos =
 
 and get_varDec s pos =
   let varDec_name, pos = get_Symbol s pos in
+  let varDec_name = new_symbol varDec_name in
   let varDec_kind, pos = get_VarDec_Kind s pos in
   let varDec_init, pos = get_exp s pos in
   { varDec_name; varDec_init; varDec_kind }, pos

@@ -14,11 +14,54 @@ Improvements
 
 * New xmlName function.
 
+* clc(): New icon in the toolbar to clear the console. See bug #12049.
+
+* test_run no longer take in account skipped tests in the summary.
+  See bug #12117
+
+
+Removed functions
+==================
+
+* mtlb_repmat removed. Scilab provides a real repmat since 5.3.1.
+
+* with_pvm removed. Use getversion() instead.
+
+* with_texmacs removed. Moved as ATOMS module: atomsInstall('texmacs')
+
+* createpopup removed. Use uicontextmenu() instead.
+
+* config() removed. Use preferences() instead.
+
+* mtlb_conv removed. Use conv() instead.
+
+* xselect() removed. Use show_window() instead.
+
+* showalluimenushandles() removed.
+  Use set(get(0), "ShowHiddenHandles", "on") instead.
+
+* Functions neldermead_display, nmplot_display, optimbase_display and
+  optimsimplex_print removed. Use disp() instead.
+
+* Function optimsimplex_tostring removed. Use string() instead.
+
+* ricc_old() removed. Use ricc() instead.
+
 
 Xcos
 =====
 
 * New Flowmeter block in the thermohydraulics palette.
+
+* Update the Palette icons and the rendering of some blocks.
+
+* xcosPalGenerateAllIcons added as an Xcos palette utility function.
+
+* Add a new ODE solver : LSodar. Automatically switches methods to efficiently solve both stiff and nonstiff problems. Includes a rootfinding feature.
+
+* Add two new Fixed-size step ODE solvers : Dormand-Prince 4(5) then Runge-Kutta 4(5). Included in the CVode package, so benefit from the rootfinding feature.
+
+* Add an implicit Fixed-size stop ODE solver : Implicit Runge-Kutta 4(5). Also benefits from the CVode rootfinding feature.
 
 * Bug #10040 fixed - VARIABLE_DELAY documentation does not fully describe the
                      initial value behavioral.
@@ -43,11 +86,26 @@ Xcos
 
 * Bug #11998 fixed - listvar_in_hdf5 did not close the hdf5 file.
 
+* Bug #12014 fixed - dep_ut help was wrongly detailed.
+
+* Bug #12031 fixed - Changes in context of superblock did not always have
+                     effect.
+
+* Bug #12162 fixed - tbx_build_blocks did not report errors.
+
 
 Documentation
 ==============
 
 * Add the 'scilab:needs-examples="no"' tag to specify that the help page does not need any example.
+
+
+Compilation
+============
+
+* Enforce a minimal version of Scirenderer (1.0.3).
+
+* Enforce a minimal version of Flexdock (1.2.1).
 
 
 Bug fixes
@@ -56,8 +114,32 @@ Bug fixes
 * Bug #3313 fixed - In the documentation, the title of a link was using the
                     id instead of the title of the page.
 
+* Bug #6583 fixed - jmat() was poorly documented.
+
+* Bug #7583 fixed - binomial function moved in the distribution function
+                    chapter.
+
+* Bug #8213 fixed - geom3d had no examples.
+
+* Bug #8395 fixed - dft has been deprecated to fft.
+
+* Bug #8414 fixed - Some genetic algorithms functions had no examples.
+
+* Bug #8638 fixed - Improved examples for gcd.
+
 * Bug #8883 fixed - In some cases, Scilab build from sources was looking for
                    libraries at the wrong place.
+
+* Bug #8964 fixed - The optim_{ga, moga, nsga, nsga2} functions may not create
+                    pop_init.
+
+* Bug #8899 fixed - The help page of splin2d was unclear about the size of
+                    the arguments.
+
+* Bug #8901 fixed - The help page of interp2d was unclear about the size of
+                    the arguments.
+
+* Bug #9005 fixed - The bitset function did not have any tests.
 
 * Bug #10661 fixed - xmltopdf & xmltopdf were failing in the binary version.
 
@@ -70,6 +152,8 @@ Bug fixes
 
 * Bug #11814 fixed - Fix a typo in one of the titles of CACSD.
 
+* Bug #11939 fixed - ssprint formatting was slightly not right.
+
 * Bug #11952 fixed - In SciNotes, a Java exception occured on selection of text
                     containing a \E.
 
@@ -78,6 +162,7 @@ Bug fixes
 * Bug #11971 fixed - Canceling "Open File" action launched from icon in the
                     toolbar opened SciNotes anyway.
 
+* Bug #11976 fixed - Check csvTextScan 3rd parameter validity.
 
 * Bug #11981 fixed - Smooth french help page had a wrong declaration
                      (colonnes => lignes).
@@ -92,16 +177,37 @@ Bug fixes
 
 * Bug #12022 fixed - ftuneq had a bad example.
 
+* Bug #12028 fixed - The pair drawlater/drawnow did not work as expected.
+
 * Bug #12033 fixed - assert_checkalmostequal was failing with two %inf values.
 
 * Bug #12043 fixed - Fix a typo in the ATOMS module help pages.
 
 * Bug #12050 fixed - Fix a typo: dimensionnal => dimensional.
 
+* Bug #12062 fixed - getsystemmetrics() failed for some properties such as 'SM_CXMAXIMIZED'.
+
 * Bug #12071 fixed - Printed info of a XML object were inconsistent with
                      available fields.
 
+* Bug #12076 fixed - csvRead was not able to open csv files when separators
+                     were not spaces.
+
 * Bug #12077 fixed - In help, attribute bgcolor was not handled in tables.
+
+* Bug #12087 fixed - profile help page did not mention add_profiling.
+
+* Bug #12097 fixed - Scilab wrongly detected DLL platform information.
+
+* Bug #12115 fixed - phaseplot(frq,db,phi) did not work.
+
+* Bug #12119 fixed - bar and barh had wrong x/y bounds.
+
+* Bug #12166 fixed - There was a bad label with drawaxis.
+
+* Bug #12179 fixed - Fix an incompatibility with MPI version of HDF5.
+
+* Bug #11965 fixed - Export to SVG converted texts in shapes.
 
 
                     Changes between version 5.3.3 and 5.4.0

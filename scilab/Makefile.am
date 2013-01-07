@@ -81,17 +81,19 @@ if IS_MACOSX
 scilab_bin_SOURCES		+=  $(top_srcdir)/modules/core/src/c/initMacOSXEnv.c
 endif
 
-JIT_LIBS = \
-  modules/jit_ocaml/libscijit_ocaml-runtime.o \
-  modules/jit_ocaml/jit_ocaml.o \
-  modules/jit_ocaml/libasmrun.a
+OCAMLLIB=$(shell ocamlc -where)
 
-modules/jit_ocaml/libscijit_ocaml-runtime.o:
-	$(MAKE) -C modules/jit_ocaml libscijit_ocaml-runtime.o
-modules/jit_ocaml/jit_ocaml.o:
-	$(MAKE) -C modules/jit_ocaml jit_ocaml.o
-modules/jit_ocaml/libasmrun.a:
-	$(MAKE) -C modules/jit_ocaml libasmrun.a
+JIT_LIBS = \
+  modules/jit_ocaml/ocamlcode.o \
+  modules/jit_ocaml/.libs/libocpsci.a \
+  $(OCAMLLIB)/libunix.a \
+  $(OCAMLLIB)/libasmrun.a 
+
+modules/jit_ocaml/.libs/libocpsci.a:
+	$(MAKE) -C modules/jit_ocaml libocpsci.la
+
+modules/jit_ocaml/ocamlcode.o:
+	$(MAKE) -C modules/jit_ocaml ocamlcode.o
 
 scilab_bin_LDADD 		= $(COMMON_LIBS)
 if GUI
@@ -111,12 +113,12 @@ scilab_cli_bin_LDADD 	= $(COMMON_LIBS) $(top_builddir)/modules/libscilab-cli.la 
 if NEED_JAVA
 # Don't do it for scilab_cli_bin. We want to be able to call it without
 # the java libs
-	scilab_bin_LDADD += $(JAVA_JNI_LIBS)
+        scilab_bin_LDADD += $(JAVA_JNI_LIBS)
 endif
 
 if IS_SOLARIS
 # The binary itself needs this dep
-	scilab_bin_LDADD += $(BLAS_LIBS)
+        scilab_bin_LDADD += $(BLAS_LIBS)
 endif
 
 if ENABLE_STATIC

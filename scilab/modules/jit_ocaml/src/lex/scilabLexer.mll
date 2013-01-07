@@ -60,7 +60,6 @@
     Printf.printf "; curr :"; print_pos lexbuf.lex_curr_p;
     Printf.printf "; st_pos :%i" lexbuf.lex_start_pos;
     Printf.printf "; curr_pos :%i \n" lexbuf.lex_curr_pos
-
 }
 
 let spaces    = [' ' '\t']
