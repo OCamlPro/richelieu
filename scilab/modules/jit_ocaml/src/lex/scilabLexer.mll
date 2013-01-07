@@ -3,11 +3,20 @@
   open Lexing
   open ScilabParser
 
+  let matrix_level = ref 0
+
   let last_token = ref EOF
 
   let return_token tok =
     last_token := tok;
     tok
+
+  let set_last_token tok =
+    last_token := tok
+
+  let str_cmt = ref ""
+
+  let str = ref ""
 
   let is_transposable () = match !last_token with
     | ID _ | RBRACK | RBRACE | VARINT _ | VARFLOAT _
@@ -17,6 +26,13 @@
   let is_EOL () = match !last_token with
     | EOL -> true
     | _ -> false
+        
+  let make_error_string lexbuf =
+    let curr = lexbuf.Lexing.lex_curr_p in
+    let line = "at line " ^ (string_of_int curr.Lexing.pos_lnum) in
+    let cnum = ", chararacter " ^ (string_of_int (curr.Lexing.pos_cnum - curr.Lexing.pos_bol - 1)) in
+    line ^ cnum ^ "."^(!str)
+    
 
  let newline_lex lexbuf =
     let pos = lexbuf.lex_curr_p in
@@ -45,10 +61,6 @@
     Printf.printf "; st_pos :%i" lexbuf.lex_start_pos;
     Printf.printf "; curr_pos :%i \n" lexbuf.lex_curr_pos
 
-  let str_cmt = ref ""
-
-  let str = ref ""
-
 }
 
 let spaces    = [' ' '\t']
@@ -66,7 +78,7 @@ let little    = (".")['0'-'9']+
 
 let mantise   = little | integer | number
 let exposant  = ['+''-']? integer
-let floating  =  mantise ['d''e''D''e'] exposant
+let floating  =  mantise ['d''e''D''E'] exposant
 
 let utf2  = ['\xC2'-'\xDF']['\x80'-'\xBF']
 
@@ -151,7 +163,7 @@ let assign = "="
 
 
 rule token = parse
-  | spaces                       { token lexbuf }
+  | spaces                       { set_last_token EOF; token lexbuf }
   | blankline                    { newline_lex lexbuf;
                                    if (is_EOL ()) then token lexbuf else return_token EOL }
   | newline                      { newline_lex lexbuf;
@@ -194,8 +206,13 @@ rule token = parse
   | dotrdivide                   { return_token DOTRDIVIDE }
   | krontimes                    { return_token KRONTIMES }
   | controltimes                 { return_token CONTROLTIMES }
-  | next newline                 { newline_lex lexbuf; token lexbuf }
-  | next                         { return_token EOL }
+  | controlldivide               { return_token CONTROLLDIVIDE }
+  | controlrdivide               { return_token CONTROLRDIVIDE }
+  | next spaces* newline         { newline_lex lexbuf; 
+                                   if !matrix_level > 0 
+                                   then EOL 
+                                   else token lexbuf }
+ | next                         { return_token EOL }
   | plus                         { return_token PLUS }
   | minus                        { return_token MINUS }
   | rdivide                      { return_token RDIVIDE }
@@ -222,10 +239,10 @@ rule token = parse
                                    NUM f }
   | lparen                       { return_token LPAREN }
   | rparen                       { return_token RPAREN }
-  | lbrace                       { return_token LBRACE }
-  | rbrace                       { return_token RBRACE }
-  | lbrack                       { return_token LBRACK }
-  | rbrack                       { return_token RBRACK }
+  | lbrace                       { incr matrix_level; return_token LBRACE }
+  | rbrace                       { decr matrix_level; return_token RBRACE }
+  | lbrack                       { incr matrix_level; return_token LBRACK }
+  | rbrack                       { decr matrix_level; return_token RBRACK }
   | dollar                       { return_token DOLLAR }
   | boolnot                      { return_token NOT }
   | booltrue                     { return_token BOOLTRUE }
@@ -239,7 +256,7 @@ rule token = parse
   | _ as c                       { Printf.printf "Lexing error : Unknow character \'%c\'" c;exit 1}
 
 and comment = parse
-  | newline                      { newline_lex lexbuf;  end_cmt lexbuf; return_token (COMMENT !str_cmt)}
+  | newline                      { end_cmt lexbuf; return_token (COMMENT !str_cmt)}
   | eof                          { return_token (COMMENT !str_cmt) }
   | _ as c                       { str_cmt := !str_cmt^(String.make 1 c); comment lexbuf }
 
@@ -249,10 +266,10 @@ and doublestr = parse
   | dquote quote                 { str := !str^"\'"; doublestr lexbuf }
   | quote dquote                 { str := !str^"\""; doublestr lexbuf }
   | quote quote                  { str := !str^"\'"; doublestr lexbuf }
-  | quote                        { failwith "Error : Heterogeneous string detected, starting with \" and ending with \'." }
+  | quote                        { failwith ("Error : Heterogeneous string detected, starting with \" and ending with \' "^(make_error_string lexbuf)) }
   | next newline                 { newline_lex lexbuf; doublestr lexbuf }
-  | newline                      { failwith "Error : unexpected newline in a string." }
-  | eof                          { failwith "Error : unexpected end of file in a string." }
+  | newline                      { failwith ("Error : unexpected newline in a string "^(make_error_string lexbuf)) }
+  | eof                          { failwith ("Error : unexpected end of file in a string "^(make_error_string lexbuf)) }
   | _ as c                       { str := !str^(String.make 1 c); doublestr lexbuf }
 
 and simplestr = parse
@@ -261,10 +278,10 @@ and simplestr = parse
   | dquote quote                 { str := !str^"\'"; simplestr lexbuf }
   | quote dquote                 { str := !str^"\""; simplestr lexbuf }
   | quote quote                  { str := !str^"\'"; simplestr lexbuf }
-  | dquote                       { failwith "Error : Heterogeneous string detected, starting with \' and ending with \"." }
+  | dquote                       { failwith ("Error : Heterogeneous string detected, starting with \' and ending with \" "^(make_error_string lexbuf)) }
   | next newline                 { newline_lex lexbuf; simplestr lexbuf }
-  | newline                      { failwith "Error : unexpected newline in a string." }
-  | eof                          { failwith "Error : unexpected end of file in a string." }
+  | newline                      { failwith ("Error : unexpected newline in a string "^(make_error_string lexbuf)) }
+  | eof                          { failwith ("Error : unexpected end of file in a string "^(make_error_string lexbuf)) }
   | _ as c                       { str := !str^(String.make 1 c); simplestr lexbuf }
 
 (* and matrix = parse *)

@@ -30,7 +30,8 @@
 %token PLUS MINUS RDIVIDE LDIVIDE TIMES POWER EQ NE LT GT LE GE
 %token SELECT SWITCH OTHERWISE CASE TRY CATCH RETURN BREAK CONTINUE
 %token BOOLTRUE BOOLFALSE QUOTE AND ANDAND NOT DOT DOTQUOTE DOTTIMES
-%token DOTLDIVIDE DOTRDIVIDE DOTPOWER OR OROR KRONTIMES CONTROLTIMES 
+%token DOTLDIVIDE DOTRDIVIDE DOTPOWER OR OROR KRONTIMES CONTROLTIMES
+%token CONTROLLDIVIDE CONTROLRDIVIDE 
 %token<float> VARINT
 %token<float> VARFLOAT
 %token<float> NUM
@@ -1056,6 +1057,38 @@ operation :
                                                   let oploc_end = Parsing.rhs_end_pos 3 in
                                                   let oploc = create_loc oploc_st oploc_end in
                                                   let oper = OpExp_dotrdivide in
+                                                  let args = { opExp_left  = $1 ;
+                                                               opExp_right = $3 ;
+                                                               opExp_kind  = OpExp_invalid_kind } in
+                                                  create_exp oploc (MathExp (OpExp (oper,args))) }
+| variable CONTROLRDIVIDE variable                  { let oploc_st = Parsing.rhs_start_pos 1 in
+                                                  let oploc_end = Parsing.rhs_end_pos 3 in
+                                                  let oploc = create_loc oploc_st oploc_end in
+                                                  let oper = OpExp_controlrdivide in
+                                                  let args = { opExp_left  = $1 ;
+                                                               opExp_right = $3 ;
+                                                               opExp_kind  = OpExp_invalid_kind } in
+                                                  create_exp oploc (MathExp (OpExp (oper,args))) }
+| variable CONTROLRDIVIDE functionCall              { let oploc_st = Parsing.rhs_start_pos 1 in
+                                                  let oploc_end = Parsing.rhs_end_pos 3 in
+                                                  let oploc = create_loc oploc_st oploc_end in
+                                                  let oper = OpExp_controlrdivide in
+                                                  let args = { opExp_left  = $1 ;
+                                                               opExp_right = $3 ;
+                                                               opExp_kind  = OpExp_invalid_kind } in
+                                                  create_exp oploc (MathExp (OpExp (oper,args))) }
+| functionCall CONTROLRDIVIDE variable              { let oploc_st = Parsing.rhs_start_pos 1 in
+                                                  let oploc_end = Parsing.rhs_end_pos 3 in
+                                                  let oploc = create_loc oploc_st oploc_end in
+                                                  let oper = OpExp_controlrdivide in
+                                                  let args = { opExp_left  = $1 ;
+                                                               opExp_right = $3 ;
+                                                               opExp_kind  = OpExp_invalid_kind } in
+                                                  create_exp oploc (MathExp (OpExp (oper,args))) }
+| functionCall CONTROLRDIVIDE functionCall          { let oploc_st = Parsing.rhs_start_pos 1 in
+                                                  let oploc_end = Parsing.rhs_end_pos 3 in
+                                                  let oploc = create_loc oploc_st oploc_end in
+                                                  let oper = OpExp_controlrdivide in
                                                   let args = { opExp_left  = $1 ;
                                                                opExp_right = $3 ;
                                                                opExp_kind  = OpExp_invalid_kind } in
