@@ -12,10 +12,24 @@
     last_token := EOF;
     matrix_level := 0
 
+  let print_pos pos =
+    Printf.printf "%i %i %i" pos.pos_lnum pos.pos_bol pos.pos_cnum
+
+  let print_lexbuf lexbuf =
+    Printf.printf "st :"; print_pos lexbuf.lex_start_p;
+    Printf.printf "; curr :"; print_pos lexbuf.lex_curr_p;
+    Printf.printf "; st_pos :%i" lexbuf.lex_start_pos;
+    Printf.printf "; curr_pos :%i \n" lexbuf.lex_curr_pos
+
   let return_token tok =
     last_token := tok;
     tok
 
+  let return_control lexbuf =
+    lexbuf.lex_curr_p <- { lexbuf.lex_curr_p with
+      pos_cnum = lexbuf.lex_curr_p.pos_cnum - 1 };
+    lexbuf.lex_curr_pos <- lexbuf.lex_curr_pos - 1
+      
   let set_last_token_spaces () =
     if !matrix_level <> 0 & (!last_token = COMMA || !last_token = PLUS)
     then ()
@@ -69,16 +83,7 @@
   let convert_scientific_notation str =
     let regexp = Str.regexp "['d''D']" in
     Str.global_replace regexp "e" str
-    
 
-  let print_pos pos =
-    Printf.printf "%i %i %i" pos.pos_lnum pos.pos_bol pos.pos_cnum
-
-  let print_lexbuf lexbuf =
-    Printf.printf "st :"; print_pos lexbuf.lex_start_p;
-    Printf.printf "; curr :"; print_pos lexbuf.lex_curr_p;
-    Printf.printf "; st_pos :%i" lexbuf.lex_start_pos;
-    Printf.printf "; curr_pos :%i \n" lexbuf.lex_curr_pos
 }
 
 let spaces    = [' ' '\t']
@@ -173,11 +178,17 @@ let krontimes   = ".*."
 let kronrdivide = "./."
 let kronldivide = ".\\."
 
-let controltimes   = "*." [^'0'-'9']
-let controlrdivide = "/." [^'0'-'9']
-let controlldivide = "\\." [^'0'-'9']
+let controltimes   = "*." [^'0'-'9''.']
+let controlrdivide = "/." [^'0'-'9''.']
+let controlldivide = "\\." [^'0'-'9''.']
+
+let lb = next spaces*
 
 let assign = "="
+
+let urlst   = [^' ''\t']
+let urlpart = urlst* '/' id spaces [^'(''=''<''>''~''@']
+let url     = urlpart
 
 
 rule token = parse
@@ -220,28 +231,34 @@ rule token = parse
   | "endfunction"                { return_token ENDFUNCTION }
   | dot                          { return_token DOT }
   | dotquote                     { return_token DOTQUOTE }
-  | next spaces* newline         { newline_lex lexbuf;
+  | lb newline                   { newline_lex lexbuf;
                                    if is_plus () || is_comma ()
                                    then token lexbuf
                                    else
                                      if !matrix_level > 0 
-                                     then EOL 
+                                     then return_token EOL 
                                      else token lexbuf }
-  | next spaces* startlinecomment{ discardcomment lexbuf }
+  | lb newline spaces* plus      { return_token PLUS }
+  | lb newline spaces* minus     { return_token MINUS }
+  | lb newline spaces* times     { return_token TIMES }
+  | lb newline spaces* ldivide   { return_token LDIVIDE }
+  | lb newline spaces* rdivide   { return_token RDIVIDE }
+    (* We need those for 'op1 linebreak operator op2' cases *)
+  | lb startlinecomment          { discardcomment lexbuf }
   | next                         { return_token LINEBREAK }
   | plus                         { return_token PLUS }
   | minus                        { return_token MINUS }
   | rdivide                      { return_token RDIVIDE }
   | dotrdivide                   { return_token DOTRDIVIDE }
-  | controlrdivide               { return_token CONTROLRDIVIDE }
+  | controlrdivide               { return_control lexbuf; return_token CONTROLRDIVIDE }
   | kronrdivide                  { return_token KRONRDIVIDE }
   | ldivide                      { return_token LDIVIDE }
   | dotldivide                   { return_token DOTLDIVIDE }  
-  | controlldivide               { return_token CONTROLLDIVIDE }
+  | controlldivide               { return_control lexbuf; return_token CONTROLLDIVIDE }
   | kronldivide                  { return_token KRONLDIVIDE }
   | times                        { return_token TIMES }
   | dottimes                     { return_token DOTTIMES }
-  | controltimes                 { return_token CONTROLTIMES }
+  | controltimes                 { return_control lexbuf; return_token CONTROLTIMES }
   | krontimes                    { return_token KRONTIMES }
   | power                        { return_token POWER }
   | dotpower                     { return_token DOTPOWER }
@@ -277,7 +294,8 @@ rule token = parse
   | boolandand                   { return_token ANDAND }
   | boolor                       { return_token OR }
   | booloror                     { return_token OROR }
-  | id as str                    { (* Printf.printf "ID[%s]" str; *) return_token (ID str) }
+  | id as ident                  { return_token (ID ident) }
+  (* | url                          { print_endline "url"; token lexbuf } *)
   | eof                          { return_token EOF }
   | _ as c                       { Printf.printf "Lexing error : Unknow character \'%c\'" c;exit 1}
 

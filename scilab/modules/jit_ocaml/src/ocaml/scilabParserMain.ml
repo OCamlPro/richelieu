@@ -8,6 +8,7 @@ let print_exn_infos =
 
 let run_test file =
   let ch = if file = "" then stdin else open_in file in
+  Printf.printf "Testing %s :" file;
   let lexbuf = Lexing.from_channel ch in
   ScilabLexer.init_lexer_var ();
   try
@@ -33,26 +34,31 @@ let run_tests dirname =
   Printf.printf "# tests to run in %s : %i\n\n" dirname (Array.length files);
   Array.iter (fun file ->
     let file = Filename.concat dirname file in
-    Printf.printf "Testing %s :" file;
-    if Filename.check_suffix file ".sci" then
+    if Filename.check_suffix file ".sci" || Filename.check_suffix file ".sce" then
       run_test file
   ) files
 
 let _ =
-  Arg.parse args (fun s -> file := s) usage;
+  Arg.parse args (fun s ->  run_test s) usage;
   if !test_flag
   then
     begin
       let dir_tests =
         ["test/";
+         (* "../../test/control/"; *)
+         (* "../../test/exec/OpExp/"; *)
+         (* "../../test/goodDelayed/"; *)
+         (* "../../test/syntax/"; *)
+         "../../test/bad/";
          (* "/home/michael/dev_sci/richelieu/code_samples/declarations/"; *)
          (* "/home/michael/dev_sci/richelieu/code_samples/scoping/"; *)
          (* "/home/michael/dev_sci/richelieu/code_samples/slow_code/"; *)
          (* "/home/michael/dev_sci/richelieu/code_samples/trick/"; *)
-         "../../test/good/";] in
+         (* "../../test/good/"; *)] in
       List.iter (run_tests) dir_tests
     end
-  else run_test !file
+
+
 
 
 
