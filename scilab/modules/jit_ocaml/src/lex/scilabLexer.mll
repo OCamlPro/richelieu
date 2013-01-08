@@ -7,12 +7,23 @@
 
   let last_token = ref EOF
 
+  (* We need this when we parse several files *)
+  let init_lexer_var () =
+    last_token := EOF;
+    matrix_level := 0
+
   let return_token tok =
     last_token := tok;
     tok
 
-  let set_last_token tok =
-    last_token := tok
+  let set_last_token_spaces () =
+    if !matrix_level <> 0 & (!last_token = COMMA || !last_token = PLUS)
+    then ()
+    else 
+      last_token := EOF
+      (* if !matrix_level = 0  *)
+      (* then last_token := EOF *)
+      (* else () *)
 
   let str_cmt = ref ""
 
@@ -25,6 +36,14 @@
 
   let is_EOL () = match !last_token with
     | EOL -> true
+    | _ -> false
+
+  let is_plus () = match !last_token with
+    | PLUS -> true
+    | _ -> false
+
+  let is_comma () = match !last_token with
+    | COMMA -> true
     | _ -> false
         
   let make_error_string lexbuf =
@@ -162,7 +181,8 @@ let assign = "="
 
 
 rule token = parse
-  | spaces                       { set_last_token EOF; token lexbuf }
+  | spaces                       { set_last_token_spaces ();
+                                   token lexbuf }
   | blankline                    { newline_lex lexbuf;
                                    if (is_EOL ()) then token lexbuf else return_token EOL }
   | newline                      { newline_lex lexbuf;
@@ -171,6 +191,7 @@ rule token = parse
                                    newline_lex lexbuf;
                                    if (is_EOL ()) then token lexbuf else return_token EOL }
   | startlinecomment             { str_cmt := ""; comment lexbuf }
+  | startblockcomment            { str_cmt := ""; commentblock lexbuf }
   | dquote                       { str := ""; doublestr lexbuf }
   | quote                        { if (is_transposable ())
                                    then return_token QUOTE 
@@ -199,25 +220,31 @@ rule token = parse
   | "endfunction"                { return_token ENDFUNCTION }
   | dot                          { return_token DOT }
   | dotquote                     { return_token DOTQUOTE }
-  | dottimes                     { return_token DOTTIMES }
-  | dotpower                     { return_token DOTPOWER }
-  | dotldivide                   { return_token DOTLDIVIDE }
-  | dotrdivide                   { return_token DOTRDIVIDE }
-  | krontimes                    { return_token KRONTIMES }
-  | controltimes                 { return_token CONTROLTIMES }
-  | controlldivide               { return_token CONTROLLDIVIDE }
-  | controlrdivide               { return_token CONTROLRDIVIDE }
-  | next spaces* newline         { newline_lex lexbuf; 
-                                   if !matrix_level > 0 
-                                   then EOL 
-                                   else token lexbuf }
- | next                         { return_token EOL }
+  | next spaces* newline         { newline_lex lexbuf;
+                                   if is_plus () || is_comma ()
+                                   then token lexbuf
+                                   else
+                                     if !matrix_level > 0 
+                                     then EOL 
+                                     else token lexbuf }
+  | next spaces* startlinecomment{ discardcomment lexbuf }
+  | next                         { return_token LINEBREAK }
   | plus                         { return_token PLUS }
   | minus                        { return_token MINUS }
   | rdivide                      { return_token RDIVIDE }
+  | dotrdivide                   { return_token DOTRDIVIDE }
+  | controlrdivide               { return_token CONTROLRDIVIDE }
+  | kronrdivide                  { return_token KRONRDIVIDE }
   | ldivide                      { return_token LDIVIDE }
+  | dotldivide                   { return_token DOTLDIVIDE }  
+  | controlldivide               { return_token CONTROLLDIVIDE }
+  | kronldivide                  { return_token KRONLDIVIDE }
   | times                        { return_token TIMES }
+  | dottimes                     { return_token DOTTIMES }
+  | controltimes                 { return_token CONTROLTIMES }
+  | krontimes                    { return_token KRONTIMES }
   | power                        { return_token POWER }
+  | dotpower                     { return_token DOTPOWER }
   | equal                        { return_token EQ }
   | notequal                     { return_token NE }
   | lowerthan                    { return_token LT }
@@ -254,8 +281,18 @@ rule token = parse
   | eof                          { return_token EOF }
   | _ as c                       { Printf.printf "Lexing error : Unknow character \'%c\'" c;exit 1}
 
+and discardcomment = parse
+  | newline                      { token lexbuf }
+  | eof                          { return_token EOF }
+  | _                            { discardcomment lexbuf }
+
 and comment = parse
-  | newline                      { end_cmt lexbuf; return_token (COMMENT !str_cmt)}
+  | newline                      { end_cmt lexbuf; return_token (COMMENT !str_cmt) }
+  | eof                          { return_token (COMMENT !str_cmt) }
+  | _ as c                       { str_cmt := !str_cmt^(String.make 1 c); comment lexbuf }
+
+and commentblock = parse
+  | endblockcomment              { return_token (COMMENT !str_cmt) }
   | eof                          { return_token (COMMENT !str_cmt) }
   | _ as c                       { str_cmt := !str_cmt^(String.make 1 c); comment lexbuf }
 

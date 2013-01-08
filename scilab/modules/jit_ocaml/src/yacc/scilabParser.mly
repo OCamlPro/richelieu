@@ -2,6 +2,10 @@
   open ScilabAst
   open Lexing
 
+  let extract_str_from_strExp exp = match exp.exp_desc with
+    | ConstExp (StringExp strexp) -> strexp.stringExp_value
+    | _ -> failwith "shouldn't happen"
+
   let create_loc start_pos end_pos =
     { first_line = start_pos.pos_lnum;
       first_column = (start_pos.pos_cnum - start_pos.pos_bol);
@@ -34,7 +38,7 @@
 %token SELECT SWITCH OTHERWISE CASE TRY CATCH RETURN BREAK CONTINUE
 %token BOOLTRUE BOOLFALSE QUOTE AND ANDAND NOT DOT DOTQUOTE DOTTIMES
 %token DOTLDIVIDE DOTRDIVIDE DOTPOWER OR OROR KRONTIMES CONTROLTIMES
-%token CONTROLLDIVIDE CONTROLRDIVIDE 
+%token CONTROLLDIVIDE CONTROLRDIVIDE LINEBREAK KRONLDIVIDE KRONRDIVIDE
 %token<float> VARINT
 %token<float> VARFLOAT
 %token<float> NUM
@@ -159,7 +163,15 @@ expression :
 | whileControl                                  { $1 }
 | tryControl                                    { $1 }
 | variable %prec TOPLEVEL                       { $1 }
-| implicitFunctionCall  %prec TOPLEVEL          { $1 }
+| implicitFunctionCall  %prec TOPLEVEL          { let list = List.rev $1 in
+                                                  let caller = List.hd list in
+                                                  let args = List.tl list in 
+                                                  let off_st = Parsing.rhs_start_pos 1 in
+                                                  let off_end = Parsing.rhs_end_pos 1 in
+                                                  let loc = create_loc off_st off_end in 
+                                                  let callexp = {callExp_name = caller; 
+                                                                 callExp_args = Array.of_list args } in
+                                                  create_exp loc (CallExp callexp) }
 | BREAK						{ let off_st = Parsing.rhs_start_pos 1 in
                                                   let off_end = Parsing.rhs_end_pos 1 in
                                                   let loc = create_loc off_st off_end in
@@ -179,19 +191,15 @@ expression :
 /* IMPLICIT FUNCTIONCALL */
 /* Bash-like : foo bar titi <=> foo('bar', 'titi') */
 implicitFunctionCall :
+| implicitFunctionCall implicitCallable         { $2::$1 } 
 | ID implicitCallable                           { let varloc_st = Parsing.rhs_start_pos 1 in
                                                   let varloc_end = Parsing.rhs_end_pos 1 in
                                                   let varloc = create_loc varloc_st varloc_end in
-                                                  let varexp =
+                                                  let var =
                                                     Var { var_location = varloc;
                                                           var_desc = simpleVar $1 } in
-                                                  let callexp =
-                                                    { callExp_name = create_exp varloc varexp;
-                                                      callExp_args = Array.of_list (List.rev $2)} in
-                                                  let fcall_st = Parsing.rhs_start_pos 1 in
-                                                  let fcall_end = Parsing.rhs_end_pos 2 in
-                                                  let loc = create_loc fcall_st fcall_end in
-                                                  create_exp loc (CallExp callexp) }
+                                                  let varexp = create_exp varloc var in
+                                                  $2::[varexp]}
 
 implicitCallable :
 | ID                                            { let strexp = StringExp
@@ -200,14 +208,63 @@ implicitCallable :
                                                   let str_st = Parsing.rhs_start_pos 1 in
                                                   let str_end = Parsing.rhs_end_pos 1 in
                                                   let str_loc = create_loc str_st str_end in
-                                                  [ create_exp str_loc (ConstExp strexp) ] }
-| implicitCallable ID                           { let strexp = StringExp
-                                                    { stringExp_value = $2 ;
+                                                  create_exp str_loc (ConstExp strexp) }
+| VARINT                                        { let strexp = StringExp
+                                                    { stringExp_value = string_of_float $1 ;
                                                       stringExp_bigString = () } in
                                                   let str_st = Parsing.rhs_start_pos 1 in
                                                   let str_end = Parsing.rhs_end_pos 1 in
                                                   let str_loc = create_loc str_st str_end in
-                                                  create_exp str_loc (ConstExp strexp)::$1 }
+                                                  create_exp str_loc (ConstExp strexp) }
+| NUM                                           { let strexp = StringExp
+                                                    { stringExp_value = string_of_float $1 ;
+                                                      stringExp_bigString = () } in
+                                                  let str_st = Parsing.rhs_start_pos 1 in
+                                                  let str_end = Parsing.rhs_end_pos 1 in
+                                                  let str_loc = create_loc str_st str_end in
+                                                  create_exp str_loc (ConstExp strexp) }
+| VARFLOAT                                      { let strexp = StringExp
+                                                    { stringExp_value = string_of_float $1 ;
+                                                      stringExp_bigString = () } in
+                                                  let str_st = Parsing.rhs_start_pos 1 in
+                                                  let str_end = Parsing.rhs_end_pos 1 in
+                                                  let str_loc = create_loc str_st str_end in
+                                                  create_exp str_loc (ConstExp strexp) }
+| STR                                           { let strexp = StringExp
+                                                    { stringExp_value = $1 ;
+                                                      stringExp_bigString = () } in
+                                                  let str_st = Parsing.rhs_start_pos 1 in
+                                                  let str_end = Parsing.rhs_end_pos 1 in
+                                                  let str_loc = create_loc str_st str_end in
+                                                  create_exp str_loc (ConstExp strexp) }
+| DOLLAR                                        { let strexp = StringExp
+                                                    { stringExp_value = "$" ;
+                                                      stringExp_bigString = () } in
+                                                  let str_st = Parsing.rhs_start_pos 1 in
+                                                  let str_end = Parsing.rhs_end_pos 1 in
+                                                  let str_loc = create_loc str_st str_end in
+                                                  create_exp str_loc (ConstExp strexp) }
+| BOOLTRUE                                      { let strexp = StringExp
+                                                    { stringExp_value = "%t" ;
+                                                      stringExp_bigString = () } in
+                                                  let str_st = Parsing.rhs_start_pos 1 in
+                                                  let str_end = Parsing.rhs_end_pos 1 in
+                                                  let str_loc = create_loc str_st str_end in
+                                                  create_exp str_loc (ConstExp strexp) }
+| BOOLFALSE                                     { let strexp = StringExp
+                                                    { stringExp_value = "%f" ;
+                                                      stringExp_bigString = () } in
+                                                  let str_st = Parsing.rhs_start_pos 1 in
+                                                  let str_end = Parsing.rhs_end_pos 1 in
+                                                  let str_loc = create_loc str_st str_end in
+                                                  create_exp str_loc (ConstExp strexp) }
+| implicitCallable DOT ID                       {  let strexp = StringExp
+                                                     { stringExp_value =  (extract_str_from_strExp $1) ^ $3 ;
+                                                       stringExp_bigString = () } in
+                                                  let str_st = Parsing.rhs_start_pos 1 in
+                                                  let str_end = Parsing.rhs_end_pos 1 in
+                                                  let str_loc = create_loc str_st str_end in
+                                                  create_exp str_loc (ConstExp strexp) }
 
 /* FUNCTIONCALL */
 functionCall :
@@ -750,7 +807,7 @@ comparison :
                                                   let cmploc = create_loc cmploc_st cmploc_end in
                                                   let oper = OpExp_le in
                                                   let args = { opExp_left  = $1 ;
-                                                               opExp_right = $3 ;
+                                                              opExp_right = $3 ;
                                                                opExp_kind  = OpExp_invalid_kind } in
                                                   create_exp cmploc (MathExp (OpExp (oper,args))) }
 | functionCall LE variable                      { let cmploc_st = Parsing.rhs_start_pos 1 in
@@ -1064,6 +1121,38 @@ operation :
                                                                opExp_right = $3 ;
                                                                opExp_kind  = OpExp_invalid_kind } in
                                                   create_exp oploc (MathExp (OpExp (oper,args))) }
+| variable KRONRDIVIDE variable                 { let oploc_st = Parsing.rhs_start_pos 1 in
+                                                  let oploc_end = Parsing.rhs_end_pos 3 in
+                                                  let oploc = create_loc oploc_st oploc_end in
+                                                  let oper = OpExp_kronrdivide in
+                                                  let args = { opExp_left  = $1 ;
+                                                               opExp_right = $3 ;
+                                                               opExp_kind  = OpExp_invalid_kind } in
+                                                  create_exp oploc (MathExp (OpExp (oper,args))) }
+| variable KRONRDIVIDE functionCall             { let oploc_st = Parsing.rhs_start_pos 1 in
+                                                  let oploc_end = Parsing.rhs_end_pos 3 in
+                                                  let oploc = create_loc oploc_st oploc_end in
+                                                  let oper = OpExp_kronrdivide in
+                                                  let args = { opExp_left  = $1 ;
+                                                               opExp_right = $3 ;
+                                                               opExp_kind  = OpExp_invalid_kind } in
+                                                  create_exp oploc (MathExp (OpExp (oper,args))) }
+| functionCall KRONRDIVIDE variable             { let oploc_st = Parsing.rhs_start_pos 1 in
+                                                  let oploc_end = Parsing.rhs_end_pos 3 in
+                                                  let oploc = create_loc oploc_st oploc_end in
+                                                  let oper = OpExp_kronrdivide in
+                                                  let args = { opExp_left  = $1 ;
+                                                               opExp_right = $3 ;
+                                                               opExp_kind  = OpExp_invalid_kind } in
+                                                  create_exp oploc (MathExp (OpExp (oper,args))) }
+| functionCall KRONRDIVIDE functionCall         { let oploc_st = Parsing.rhs_start_pos 1 in
+                                                  let oploc_end = Parsing.rhs_end_pos 3 in
+                                                  let oploc = create_loc oploc_st oploc_end in
+                                                  let oper = OpExp_kronrdivide in
+                                                  let args = { opExp_left  = $1 ;
+                                                               opExp_right = $3 ;
+                                                               opExp_kind  = OpExp_invalid_kind } in
+                                                  create_exp oploc (MathExp (OpExp (oper,args))) }
 | variable CONTROLRDIVIDE variable                  { let oploc_st = Parsing.rhs_start_pos 1 in
                                                   let oploc_end = Parsing.rhs_end_pos 3 in
                                                   let oploc = create_loc oploc_st oploc_end in
@@ -1157,6 +1246,38 @@ operation :
                                                   let oploc_end = Parsing.rhs_end_pos 3 in
                                                   let oploc = create_loc oploc_st oploc_end in
                                                   let oper = OpExp_dotldivide in
+                                                  let args = { opExp_left  = $1 ;
+                                                               opExp_right = $3 ;
+                                                               opExp_kind  = OpExp_invalid_kind } in
+                                                  create_exp oploc (MathExp (OpExp (oper,args))) }
+| variable KRONLDIVIDE variable                 { let oploc_st = Parsing.rhs_start_pos 1 in
+                                                  let oploc_end = Parsing.rhs_end_pos 3 in
+                                                  let oploc = create_loc oploc_st oploc_end in
+                                                  let oper = OpExp_kronldivide in
+                                                  let args = { opExp_left  = $1 ;
+                                                               opExp_right = $3 ;
+                                                               opExp_kind  = OpExp_invalid_kind } in
+                                                  create_exp oploc (MathExp (OpExp (oper,args))) }
+| variable KRONLDIVIDE functionCall             { let oploc_st = Parsing.rhs_start_pos 1 in
+                                                  let oploc_end = Parsing.rhs_end_pos 3 in
+                                                  let oploc = create_loc oploc_st oploc_end in
+                                                  let oper = OpExp_kronldivide in
+                                                  let args = { opExp_left  = $1 ;
+                                                               opExp_right = $3 ;
+                                                               opExp_kind  = OpExp_invalid_kind } in
+                                                  create_exp oploc (MathExp (OpExp (oper,args))) }
+| functionCall KRONLDIVIDE variable             { let oploc_st = Parsing.rhs_start_pos 1 in
+                                                  let oploc_end = Parsing.rhs_end_pos 3 in
+                                                  let oploc = create_loc oploc_st oploc_end in
+                                                  let oper = OpExp_kronldivide in
+                                                  let args = { opExp_left  = $1 ;
+                                                               opExp_right = $3 ;
+                                                               opExp_kind  = OpExp_invalid_kind } in
+                                                  create_exp oploc (MathExp (OpExp (oper,args))) }
+| functionCall KRONLDIVIDE functionCall         { let oploc_st = Parsing.rhs_start_pos 1 in
+                                                  let oploc_end = Parsing.rhs_end_pos 3 in
+                                                  let oploc = create_loc oploc_st oploc_end in
+                                                  let oper = OpExp_kronldivide in
                                                   let args = { opExp_left  = $1 ;
                                                                opExp_right = $3 ;
                                                                opExp_kind  = OpExp_invalid_kind } in
@@ -1738,6 +1859,7 @@ caseControlBreak :
 | THEN COMMA EOL                   { }
 | THEN SEMI                        { }
 | THEN SEMI EOL                    { }
+| /* Epsilon */ %prec CONTROLBREAK { }
 
 
 /* FOR */
@@ -2138,6 +2260,32 @@ variableDeclaration :
                                                                   let off_end = Parsing.rhs_end_pos 3 in
                                                                   let loc = create_loc off_st off_end in
                                                                   create_exp loc assignexp}
+| assignable ASSIGN COLON                                       { let cvarloc_st = Parsing.rhs_start_pos 1 in
+                                                                  let cvarloc_end = Parsing.rhs_end_pos 1 in
+                                                                  let loc = create_loc cvarloc_st cvarloc_end in
+                                                                  let cvar_exp =
+                                                                    Var { var_location = loc;
+                                                                          var_desc = ColonVar } in
+                                                                  let assignexp = 
+                                                                    AssignExp {assignExp_left_exp = $1;
+                                                                               assignExp_right_exp = create_exp loc cvar_exp } in
+                                                                  let off_st = Parsing.rhs_start_pos 1 in
+                                                                  let off_end = Parsing.rhs_end_pos 3 in
+                                                                  let loc = create_loc off_st off_end in
+                                                                  create_exp loc assignexp }
+| functionCall ASSIGN COLON                                       { let cvarloc_st = Parsing.rhs_start_pos 1 in
+                                                                  let cvarloc_end = Parsing.rhs_end_pos 1 in
+                                                                  let loc = create_loc cvarloc_st cvarloc_end in
+                                                                  let cvar_exp =
+                                                                    Var { var_location = loc;
+                                                                          var_desc = ColonVar } in
+                                                                  let assignexp = 
+                                                                    AssignExp {assignExp_left_exp = $1;
+                                                                               assignExp_right_exp = create_exp loc cvar_exp } in
+                                                                  let off_st = Parsing.rhs_start_pos 1 in
+                                                                  let off_end = Parsing.rhs_end_pos 3 in
+                                                                  let loc = create_loc off_st off_end in
+                                                                  create_exp loc assignexp }
 
 assignable :
 | variable DOT ID %prec UPLEVEL	                                { let varloc_st = Parsing.rhs_start_pos 3 in
@@ -2187,12 +2335,19 @@ assignable :
                                                                   let fcall_end = Parsing.rhs_end_pos 4 in
                                                                   let loc = create_loc fcall_st fcall_end in
                                                                   create_exp loc (CallExp callexp) }
+| functionCall LPAREN functionArgs RPAREN                       { let callexp =
+                                                                    { callExp_name = $1;
+                                                                      callExp_args = Array.of_list $3} in
+                                                                  let fcall_st = Parsing.rhs_start_pos 1 in
+                                                                  let fcall_end = Parsing.rhs_end_pos 4 in
+                                                                  let loc = create_loc fcall_st fcall_end in
+                                                                  create_exp loc (CallExp callexp) }
 
 multipleResults :
-| LBRACK matrixOrCellColumns RBRACK			{ let off_st = Parsing.rhs_start_pos 1 in
-                                                          let off_end = Parsing.rhs_end_pos 3 in
-                                                          let loc = create_loc off_st off_end in
-                                                          create_exp loc (AssignListExp (Array.of_list $2)) }
+| LBRACK matrixOrCellColumns RBRACK		           	{ let off_st = Parsing.rhs_start_pos 1 in
+                                                                  let off_end = Parsing.rhs_end_pos 3 in
+                                                                  let loc = create_loc off_st off_end in
+                                                                  create_exp loc (AssignListExp (Array.of_list $2)) }
 
 /* COMMENTS */
 comments :

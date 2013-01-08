@@ -9,6 +9,7 @@ let print_exn_infos =
 let run_test file =
   let ch = if file = "" then stdin else open_in file in
   let lexbuf = Lexing.from_channel ch in
+  ScilabLexer.init_lexer_var ();
   try
     let ast = ScilabParser.program ScilabLexer.token lexbuf in
     begin
