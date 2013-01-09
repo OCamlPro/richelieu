@@ -179,7 +179,7 @@ val extractFullMatrix : t -> t
 
 
 (* Only on Double, Bool, SparseBool *)
-val not_exp : t -> t
+(* val not_exp : t -> t *)
 
 val generic_get_rows : t -> int
 val generic_get_cols : t -> int
@@ -204,3 +204,8 @@ val new_bool : int array -> t
 val equal : t -> t -> bool
 val nequal : t -> t -> bool
 
+val map : t -> t
+val sparsebool_get : t -> int -> int -> bool
+val sparsebool_set : t -> int -> int -> bool -> unit
+val unsafe_sparsebool_get : t -> int -> int -> bool
+val unsafe_sparsebool_set : t -> int -> int -> bool -> unit

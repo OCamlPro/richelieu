@@ -298,6 +298,35 @@ external ocpsci_overload_getNameFromOper_ml :
 external ocpsci_equal_ml : t -> t -> bool =   "ocpsci_equal_c"
 external ocpsci_nequal_ml : t -> t -> bool =   "ocpsci_nequal_c"
 
+type wstring
+
+external ocpsci_free_wstring_ml :
+  wstring -> unit = "ocpsci_free_wstring_c"
+external ocpsci_parse_wstring_c :
+  string -> wstring = "ocpsci_parse_wstring_c"
+
+(*********************************************************************)
+(*                                                                   *)
+(*                                                                   *)
+(*                 Unsafe       functions                            *)
+(*                                                                   *)
+(*                                                                   *)
+(*********************************************************************)
+
+let unsafe_get_double = ocpsci_sci2ml_double_ml
+let unsafe_get_bool = ocpsci_sci2ml_bool_ml
+let unsafe_set_double = ocpsci_set_double_ml
+let unsafe_set_int8 = ocpsci_set_int8_ml
+let unsafe_set_int16 = ocpsci_set_int16_ml
+let unsafe_set_int32 = ocpsci_set_int32_ml
+let unsafe_get_size =  ocpsci_generic_getSize_ml
+let unsafe_sparsebool_get = ocpsci_sparsebool_get_ml
+let unsafe_sparsebool_set = ocpsci_sparsebool_set_ml
+let unsafe_set_bool = ocpsci_set_bool_ml
+let unsafe_get_dims = ocpsci_generic_getDimsArray_ml
+let unsafe_get_rows = ocpsci_generic_getRows_ml
+let unsafe_get_cols = ocpsci_generic_getCols_ml
+
 (*********************************************************************)
 (*                                                                   *)
 (*                                                                   *)
@@ -365,27 +394,93 @@ let isGeneric typ =
   | RealUInt64 -> true
   | _ -> false
 
-let unsafe_get_double = ocpsci_sci2ml_double_ml
-let unsafe_get_bool = ocpsci_sci2ml_bool_ml
+exception ScilabTypeError of string * realType * realType list
+
+let type_error_kind s kind kinds =
+  raise (ScilabTypeError ("ScilabInternalType." ^ s, kind, kinds))
+let type_error s t kinds =
+  type_error_kind s (get_type t) kinds
+let type_error_generic s t =
+  type_error_kind s (get_type t)
+    [RealGeneric
+    ; RealContainer
+    ; RealList
+    ; RealTList
+    ; RealMList
+    ; RealFloat
+    ; RealSinglePoly
+    ; RealBool
+    ; RealCell
+    ; RealDouble
+    ; RealHandle (* RealGraphicHandle *)
+    ; RealInt8
+    ; RealInt16
+    ; RealInt32
+    ; RealInt64
+    ; RealPoly
+    ; RealDollar
+    ; RealString
+    ; RealStruct
+    ; RealUInt8
+    ; RealUInt16
+    ; RealUInt32
+    ; RealUInt64]
+
+let type_error_computable s t =
+  type_error_kind s (get_type t)
+    [ RealBool;
+      RealInt8;
+      RealInt16;
+      RealInt32]
+(* TODO: For now, we don't support unsigned ints
+      RealInt64;
+      RealUInt8;
+      RealUInt16;
+      RealUInt32;
+      RealUInt64]
+*)
+
+let type_error_list s t =
+  type_error_kind s (get_type t)
+ [RealList; RealTList; RealMList]
+
 let get_double t pos =
   match get_type t with
   | RealDouble ->  unsafe_get_double t pos
-  | _ -> assert false
+  | _ -> type_error "get_double" t [RealDouble]
 
 let get_bool t pos =
   match get_type t with
   | RealBool -> unsafe_get_bool t pos
-  | _ -> assert false
+  | _ -> type_error "get_bool" t [RealBool]
 
 let int32_0xff = Int32.of_int 0xff
 let int32_0xffff = Int32.of_int 0xffff
+let int32_minus = Int32.of_int 0xffff
 
-let mod_int8 x = Int32.logand x int32_0xff
-let mod_int16 x = Int32.logand x int32_0xffff
+let mod_uint8 x = Int32.logand x int32_0xff
+let mod_uint16 x = Int32.logand x int32_0xffff
+let add_uint8 x y = mod_uint8 (Int32.add x y)
+let add_uint16 x y = mod_uint16 (Int32.add x y)
+let add_uint32 x y = Int32.add x y
+
+
+let mod_int8 x =
+  if x < Int32.zero then
+    Int32.neg (mod_uint8 (Int32.neg x))
+  else
+    mod_uint8 x
+
+let mod_int16 x =
+  if x < Int32.zero then
+    Int32.neg (mod_uint16 (Int32.neg x))
+  else
+    mod_uint16 x
 
 let add_int8 x y = mod_int8 (Int32.add x y)
 let add_int16 x y = mod_int16 (Int32.add x y)
 let add_int32 x y = Int32.add x y
+
 
 let get_int8 t pos =
   match get_type t with
@@ -393,7 +488,7 @@ let get_int8 t pos =
   | RealInt16 -> mod_int8 (ocpsci_sci2ml_int16_ml t pos)
   | RealInt32 -> mod_int8 (ocpsci_sci2ml_int32_ml t pos)
   | RealDouble -> mod_int8 (Int32.of_float (ocpsci_sci2ml_double_ml t pos))
-  | _ -> assert false
+  | _ -> type_error_computable "get_int8" t
 
 let get_int16 t pos =
   match get_type t with
@@ -401,7 +496,7 @@ let get_int16 t pos =
   | RealInt8 -> ocpsci_sci2ml_int8_ml t pos
   | RealInt32 -> mod_int16 (ocpsci_sci2ml_int32_ml t pos)
   | RealDouble -> mod_int16 (Int32.of_float (ocpsci_sci2ml_double_ml t pos))
-  | _ -> assert false
+  | _ -> type_error "get_int16" t [RealInt8; RealInt16; RealInt32; RealDouble]
 
 let get_int32 t pos =
   match get_type t with
@@ -409,48 +504,44 @@ let get_int32 t pos =
   | RealInt16 -> ocpsci_sci2ml_int16_ml t pos
   | RealInt32 -> ocpsci_sci2ml_int32_ml t pos
   | RealDouble -> Int32.of_float (ocpsci_sci2ml_double_ml t pos)
-  | _ -> assert false
+  | _ -> type_error "get_int32" t [RealInt8; RealInt16; RealInt32; RealDouble]
 
 let get_string t pos =
   match get_type t with
   | RealString -> ocpsci_sci2ml_string_ml t pos
-  | _ -> assert false
+  | _ -> type_error "get_string" t [RealString]
 
 let get_implicitlist t =
   match get_type t with
   | RealImplicitList -> ocpsci_sci2ml_implicitlist_ml t
-  | _ -> assert false
+  | _ -> type_error "get_implicitlist" t [RealImplicitList]
 
 let set_double t pos d =
   match get_type t with
   | RealDouble -> ocpsci_set_double_ml t pos d
-  | _ -> assert false
+  | _ -> type_error "set_double" t [RealDouble]
 
 let set_int8 t pos d =
   match get_type t with
   | RealInt8 -> ocpsci_set_int8_ml t pos d
-  | _ -> assert false
+  | _ -> type_error "set_int8" t [RealInt8]
 
 let set_int16 t pos d =
   match get_type t with
   | RealInt16 -> ocpsci_set_int16_ml t pos d
-  | _ -> assert false
+  | _ -> type_error "set_int16" t [RealInt16]
 
 let set_int32 t pos d =
   match get_type t with
   | RealInt32 -> ocpsci_set_int32_ml t pos d
-  | _ -> assert false
+  | _ -> type_error "set_int32" t [RealInt32]
 
-let unsafe_set_double = ocpsci_set_double_ml
-let unsafe_set_int8 = ocpsci_set_int8_ml
-let unsafe_set_int16 = ocpsci_set_int16_ml
-let unsafe_set_int32 = ocpsci_set_int32_ml
 
 let empty_double = ocpsci_empty_double_ml
 let call t args opt_args iRetCount =
   match get_type t with
   | RealFunction -> ocpsci_call_ml t args opt_args iRetCount
-  | _ -> assert false
+  | _ -> type_error "call" t [RealFunction]
 
 let clone = ocpsci_clone_ml
 
@@ -464,11 +555,8 @@ let decr_refcount = ocpsci_decr_refcount_ml
 
 let generic_get_size t =
   if isGeneric (get_type t) then ocpsci_generic_getSize_ml t
-  else assert false
+  else type_error_generic "generic_get_size" t
 
-let unsafe_get_size =
-  (* TODO: we should probably check that the type has a size ! *)
-  ocpsci_generic_getSize_ml
 
 
 let iterator_of_implicitlist t =
@@ -519,9 +607,15 @@ let iterator_of_implicitlist t =
         | RealDouble, RealInt32, _
         | RealDouble, RealDouble, RealInt32 ->
           iterator get_int32 add_int32 int32 unsafe_set_int32 Int32.to_string
-        | _ -> assert false
+        | RealDouble, RealDouble, _ ->
+          type_error_computable "iterator_of_implicitlist(stop)" stop
+        | RealDouble, _, _ ->
+          type_error_computable "iterator_of_implicitlist(step)" step
+        | _ ->
+          type_error_computable "iterator_of_implicitlist(start)" start
     end
-  | _ -> assert false
+  | _ ->
+    type_error "iterator_of_implicitlist" t [RealImplicitList]
 
 let iterator_of_list t =
   match get_type t with
@@ -538,7 +632,8 @@ let iterator_of_list t =
           Some (ocpsci_list_get_ml t pos)
         end else None
       )
-  | _ -> assert false
+  | _ ->
+    type_error_list "iterator_of_list" t
 
 let iterator_of_generic t =
   if isGeneric (get_type t) then
@@ -553,19 +648,17 @@ let iterator_of_generic t =
         end else None
       )
   else
-    assert false
+    type_error_generic "iterator_of_generic" t
 
-let unsafe_get_rows = ocpsci_generic_getRows_ml
 let generic_get_rows t =
   if isGeneric (get_type t) then ocpsci_generic_getRows_ml t
-  else assert false
+  else type_error_generic "generic_get_rows" t
 
-let unsafe_get_cols = ocpsci_generic_getCols_ml
 
 let generic_get_cols t =
   if isGeneric (get_type t) then
     ocpsci_generic_getCols_ml t
-  else assert false
+  else type_error_generic "generic_get_cols" t
 
 let rec is_true t =
   match get_type t with
@@ -600,7 +693,8 @@ let rec is_true t =
       in
       iter iterator
     end
-  | _ -> false
+  | _ ->
+    type_error "it_true" t [RealDouble; RealBool; RealImplicitList]
 
 
 let get_funlist = ocpsci_get_funlist_ml
@@ -615,62 +709,52 @@ let list_get t pos =
   | RealMList
   | RealTList ->
     ocpsci_list_get_ml t pos
-  | _ -> assert false
+  | _ -> type_error_list "list_get" t
 
 let extractFullMatrix t =
   match get_type t with
     RealImplicitList -> ocpsci_implicitlist_extractFullMatrix_ml t
   | _ -> t
 
-let unsafe_get_dims = ocpsci_generic_getDimsArray_ml
-
 let generic_get_dims t =
   if isGeneric (get_type t) then
     ocpsci_generic_getDimsArray_ml t
-  else assert false
+  else type_error_generic "generic_get_dims" t
 
 let set_bool t pos bool =
   match get_type t with
     RealBool ->
       ocpsci_set_bool_ml t pos bool
-  | _ -> assert false
-let unsafe_set_bool = ocpsci_set_bool_ml
+  | _ -> type_error "set_bool" t [RealBool]
 
 let new_bool = ocpsci_new_bool_ml
-
-let not_exp t =
-  match get_type t with
-  | RealDouble ->
-    let t2 = ocpsci_new_bool_ml (ocpsci_generic_getDimsArray_ml t) in
-    for i = 0 to ocpsci_generic_getSize_ml t - 1 do
-      let d = ocpsci_sci2ml_double_ml t i in
-      ocpsci_set_double_ml t2 i
-        (if d = 0. then 1. else 0.)
-    done;
-    t2
-  | RealBool ->
-    let t2 = ocpsci_new_bool_ml (ocpsci_generic_getDimsArray_ml t) in
-    for i = 0 to ocpsci_generic_getSize_ml t - 1 do
-      let b = ocpsci_sci2ml_bool_ml t i in
-      ocpsci_set_bool_ml t2 i (not b)
-    done;
-    t2
-  | RealSparseBool ->
-    let t2 = ocpsci_map_ml t in
-    for row = 0 to ocpsci_generic_getRows_ml t - 1 do
-      for col = 0 to ocpsci_generic_getCols_ml t - 1 do
-        let b = ocpsci_sparsebool_get_ml t row col in
-        ocpsci_sparsebool_set_ml t2 row col (not b)
-      done;
-    done;
-    t2
-  | _ -> assert false
 
 let overload_buildName0 = ocpsci_overload_buildName0_ml
 let overload_buildName1 = ocpsci_overload_buildName1_ml
 let overload_buildName2 = ocpsci_overload_buildName2_ml
 let getShortTypeStr = ocpsci_getShortTypeStr_ml
 let overload_getNameFromOper = ocpsci_overload_getNameFromOper_ml
+
+let sparsebool_get t row col =
+  match get_type t with
+    RealSparseBool -> unsafe_sparsebool_get t row col
+  | _ -> type_error "sparsebool_get" t [RealSparseBool]
+let sparsebool_set t row col b =
+  match get_type t with
+    RealSparseBool -> unsafe_sparsebool_set t row col b
+  | _ -> type_error "sparsebool_set" t [RealSparseBool]
+
+let _ =
+  Printexc.register_printer (function exn ->
+    match exn with
+    | ScilabTypeError (name, kind, kinds) ->
+      let kind = string_of_realType kind in
+      let kinds = List.map string_of_realType kinds in
+      Some (Printf.sprintf
+              "TypeError in function %S: value of type %s instead of expected types %s"
+              name kind (String.concat "| " kinds))
+    | _ -> None
+)
 
 (*********************************************************************)
 (*                                                                   *)
@@ -714,6 +798,7 @@ let test_double_and_compare () =
   ) list;
   Printf.fprintf stderr "\n%!"
 
+let map = ocpsci_map_ml
 
 let print_all_primitives () =
   let fun_names = ocpsci_get_funlist_ml () in

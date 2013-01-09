@@ -321,8 +321,35 @@ let rec interp env exp : Sci.t option =
 
 
   | MathExp ( NotExp  { notExp_exp = exp } ) ->
-    Some (Sci.not_exp (interp_at_least_one env exp))
-
+    let t = interp_at_least_one env exp in
+    begin
+      match Sci.get_type t with
+      | Sci.RealDouble ->
+        let t2 = Sci.new_bool (Sci.generic_get_dims t) in
+        for i = 0 to Sci.generic_get_size t - 1 do
+          let d = Sci.get_double t i in
+          Sci.set_double t2 i
+            (if d = 0. then 1. else 0.)
+        done;
+        Some t2
+      | Sci.RealBool ->
+        let t2 = Sci.new_bool (Sci.generic_get_dims t) in
+        for i = 0 to Sci.generic_get_size t - 1 do
+          let b = Sci.get_bool t i in
+          Sci.set_bool t2 i (not b)
+        done;
+        Some t2
+      | Sci.RealSparseBool ->
+        let t2 = Sci.map t in
+        for row = 0 to Sci.generic_get_rows t - 1 do
+          for col = 0 to Sci.generic_get_cols t - 1 do
+            let b = Sci.sparsebool_get t row col in
+            Sci.sparsebool_set t2 row col (not b)
+          done;
+        done;
+        Some t2
+      | _ -> assert false
+    end
 
   (* These ones can only happen within other constructs, in specific positions.
      Do the pattern-matching directly there for them ! *)

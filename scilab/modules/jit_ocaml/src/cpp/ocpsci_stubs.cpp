@@ -37,6 +37,9 @@ extern "C"
 #include "cell.hxx"
 #include "graphichandle.hxx"
 #include "sparse.hxx"
+#include "parser.hxx"
+
+#include "jit_ocaml.hxx"
 
 /*
 We must declare all stubs as C functions, otherwise they cannot be
@@ -112,6 +115,10 @@ extern "C" {
   value ocpsci_overload_getNameFromOper_c(value oper_v);
   value ocpsci_equal_c(value left_v, value right_v);
   value ocpsci_nequal_c(value left_v, value right_v);
+
+  value ocpsci_free_wstring_c(value s_v);
+  value ocpsci_parse_wstring_c(value s_v);
+
 }
 
 #define Scilab_val(v) (*((types::InternalType**) Data_custom_val(v)))
@@ -241,19 +248,25 @@ matrices. We should implement a lexicographic comparison on matrices.
 int ocpsci_compare_scilab(value ptr1_v, value ptr2_v)
 {
   int res;
+  int ret = 0;
 
-  types::InternalType *ptr1 = Scilab_val(ptr1_v);
-  types::InternalType *ptr2 = Scilab_val(ptr2_v);
-  types::InternalType *pResult = GenericLess(ptr1, ptr2);
-  res = bConditionState(pResult);
-  delete pResult;
-  if( res ) return -1;
-  pResult = GenericGreater(ptr1, ptr2);
-  res = bConditionState(pResult);
-  delete pResult;
-  if( res ) return 1;
+  //  try {
+    types::InternalType *ptr1 = Scilab_val(ptr1_v);
+    types::InternalType *ptr2 = Scilab_val(ptr2_v);
+    types::InternalType *pResult = GenericLess(ptr1, ptr2);
+    res = bConditionState(pResult);
+    delete pResult;
+    if( res ) { 
+      ret = -1; 
+    } else {
+      pResult = GenericGreater(ptr1, ptr2);
+      res = bConditionState(pResult);
+      delete pResult;
+      if( res ) ret = 1;
+    }
+    //  } catch 
 
-  return 0;
+  return ret;
 }
 
 struct custom_operations ocpsci_custom_ops = {
@@ -276,6 +289,13 @@ value Val_scilab(types::InternalType *t_s)
   return res_v;
 }
 
+
+static std::wstring Wstring_val(value s_v)
+{
+  int size = caml_string_length(s_v);
+  const wchar_t *c_str = (const wchar_t *)(s_v);  
+  return std::wstring(c_str, size / sizeof(wchar_t));
+}
 
 value Val_wstring(const std::wstring & w)
 {
@@ -622,13 +642,6 @@ value ocpsci_sci2ml_string_c(value s_v, value pos_v)
 {
   types::String *s_s = Scilab_val(s_v)->getAs<types::String>();
   return Val_wstring( s_s->get(Int_val(pos_v)) );
-}
-
-static std::wstring Wstring_val(value s_v)
-{
-  int size = caml_string_length(s_v);
-  const wchar_t *c_str = (const wchar_t *)(s_v);  
-  return std::wstring(c_str, size / sizeof(wchar_t));
 }
 
 
@@ -1125,4 +1138,32 @@ value ocpsci_nequal_c(value left_v, value right_v){
   InternalType *right_s = Scilab_val( right_v );
 
   return Val_bool( *left_s != *right_s );
+}
+
+
+value ocpsci_parse_wstring_c(value s_v)
+{
+  int size = caml_string_length(s_v);
+  const wchar_t *c_str = (const wchar_t *)(s_v);  
+
+  wchar_t* pstCommand = NULL;
+  Parser parser;
+  pstCommand = (wchar_t*)MALLOC(size + 2 * sizeof(wchar_t));
+  wcscpy(pstCommand, c_str);
+  int iPos = (int)wcslen(pstCommand);
+  pstCommand[iPos++] = L'\n';
+  pstCommand[iPos] = 0;     
+  parser.parse(pstCommand);
+  FREE(pstCommand);
+  ast::Exp* pExp = parser.getTree();
+  if(pExp == NULL) caml_failwith( "ParseError" );
+
+  char *res = scicaml_ast2string(pExp);	  
+  return (value) res;
+}
+
+value ocpsci_free_wstring_c(value s_v)
+{
+  free( (char*) s_v );
+  return Val_unit;
 }
