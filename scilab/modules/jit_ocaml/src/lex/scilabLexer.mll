@@ -7,8 +7,15 @@
 
   let last_token = ref EOF
 
+  let str_cmt = ref ""
+
+  let str = ref ""
+
+  let shellmode_on = ref false
+
   (* We need this when we parse several files *)
   let init_lexer_var () =
+    shellmode_on := false;
     last_token := EOF;
     matrix_level := 0
 
@@ -29,6 +36,12 @@
     lexbuf.lex_curr_p <- { lexbuf.lex_curr_p with
       pos_cnum = lexbuf.lex_curr_p.pos_cnum - 1 };
     lexbuf.lex_curr_pos <- lexbuf.lex_curr_pos - 1
+
+  let return_shell tok = 
+    last_token := tok;
+    shellmode_on := false;
+    tok
+    
       
   let set_last_token_spaces () =
     if !matrix_level <> 0 & (!last_token = COMMA || !last_token = PLUS)
@@ -39,10 +52,6 @@
       (* then last_token := EOF *)
       (* else () *)
 
-  let str_cmt = ref ""
-
-  let str = ref ""
-
   let is_transposable () = match !last_token with
     | ID _ | RBRACK | RBRACE | VARINT _ | VARFLOAT _
     | RPAREN | NUM _ | BOOLTRUE | BOOLFALSE -> true
@@ -50,6 +59,10 @@
 
   let is_EOL () = match !last_token with
     | EOL -> true
+    | _ -> false
+
+  let is_EOF () = match !last_token with
+    | EOF -> true
     | _ -> false
 
   let is_plus () = match !last_token with
@@ -184,16 +197,15 @@ let controlldivide = "\\." [^'0'-'9''.']
 
 let lb = next spaces*
 
+let shellmode_arg = [^ '\t''\r''\n'','';''\'''\"']+
+
 let assign = "="
-
-let urlst   = [^' ''\t']
-let urlpart = urlst* '/' id spaces [^'(''=''<''>''~''@']
-let url     = urlpart
-
 
 rule token = parse
   | spaces                       { set_last_token_spaces ();
-                                   token lexbuf }
+                                   if !shellmode_on 
+                                   then shellmode lexbuf
+                                   else token lexbuf }
   | blankline                    { newline_lex lexbuf;
                                    if (is_EOL ()) then token lexbuf else return_token EOL }
   | newline                      { newline_lex lexbuf;
@@ -206,7 +218,7 @@ rule token = parse
   | dquote                       { str := ""; doublestr lexbuf }
   | quote                        { if (is_transposable ())
                                    then return_token QUOTE 
-                                   else begin str := ""; simplestr lexbuf end}
+                                   else begin str := ""; simplestr lexbuf end }
   | "if"                         { return_token IF }
   | "then"                       { return_token THEN }
   | "else"                       { return_token ELSE }
@@ -280,7 +292,7 @@ rule token = parse
                                    return_token (NUM num) }
   | floating as float            { let f =(float_of_string (convert_scientific_notation float)) in
                                    NUM f }
-  | lparen                       { return_token LPAREN }
+  | lparen                       { if !shellmode_on then shellmode_on := false; return_token LPAREN }
   | rparen                       { return_token RPAREN }
   | lbrace                       { incr matrix_level; return_token LBRACE }
   | rbrace                       { decr matrix_level; return_token RBRACE }
@@ -294,8 +306,14 @@ rule token = parse
   | boolandand                   { return_token ANDAND }
   | boolor                       { return_token OR }
   | booloror                     { return_token OROR }
-  | id as ident                  { return_token (ID ident) }
-  (* | url                          { print_endline "url"; token lexbuf } *)
+  | id as ident                  { if is_EOL () || is_EOF ()
+                                   then
+                                     if ident = "load" || ident = "exec" || ident = "cd" (* context should have those functions *)
+                                     then shellmode_on := true;
+                                       return_token (ID ident)
+                                   (* (\*shellmode lexbuf*\) *)
+                                   (*   else return_token (ID ident) *)
+                                   (* else return_token (ID ident) *) }
   | eof                          { return_token EOF }
   | _ as c                       { Printf.printf "Lexing error : Unknow character \'%c\'" c;exit 1}
 
@@ -337,6 +355,25 @@ and simplestr = parse
   | newline                      { failwith ("Error : unexpected newline in a string "^(make_error_string lexbuf)) }
   | eof                          { failwith ("Error : unexpected end of file in a string "^(make_error_string lexbuf)) }
   | _ as c                       { str := !str^(String.make 1 c); simplestr lexbuf }
+      
+and shellmode = parse
+  | spaces*                      { shellmode lexbuf }
+  | semicolon                    { return_shell SEMI }
+  | comma                        { return_shell COMMA }
+  | newline                      { newline_lex lexbuf;
+                                   return_shell EOL }
+  | assign                       { return_shell ASSIGN }
+  | lparen                       { return_shell LPAREN }
+  | lowerthan                    { return_shell LT }
+  | greaterthan                  { return_shell GT }
+  | boolnot                      { return_shell NOT }
+  | quote                        { shellmode_on := false; 
+                                   if (is_transposable ())
+                                   then return_shell QUOTE 
+                                   else begin str := ""; simplestr lexbuf end }
+  | dquote                       { shellmode_on := false; str := ""; doublestr lexbuf }
+  | shellmode_arg as arg         { return_shell (ID arg) }
+  | eof                          { return_shell EOF }
 
 (* and matrix = parse *)
 (*   | spaces+ *)
