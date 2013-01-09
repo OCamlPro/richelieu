@@ -25,7 +25,7 @@ let exec_ast =
   with _ -> false
 
 external jit_ocaml_register_callback_ml :
-  (string -> string) -> unit = "jit_ocaml_register_callback_c"
+  (string -> string) -> unit = "scicaml_register_callback_c"
 
 let _ =
   jit_ocaml_register_callback_ml

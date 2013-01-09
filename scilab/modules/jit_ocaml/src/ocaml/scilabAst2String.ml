@@ -49,7 +49,7 @@ let buf_uint32_32 b nl =
 
 
 external jit_ocaml_set_double : string -> int -> float -> unit =
-    "jit_ocaml_set_double_c"
+    "scicaml_set_double_c"
 let double_len = 8
 let buf_double =
   let s = String.create double_len in

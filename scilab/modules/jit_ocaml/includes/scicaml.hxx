@@ -10,13 +10,14 @@
  *
  */
 
-#ifndef __JIT_OCAML_HH__
-#define __JIT_OCAML_HH__
+#ifndef __SCICAML_HH__
+#define __SCICAML_HH__
 
 #include "ast.hxx"
 #include "exp.hxx"
 
 extern char* scicaml_ast2string(ast::Exp*);
 extern ast::Exp* scicaml_string2ast(char*);
+extern char* scicaml_analyze(char*);
 
-#endif /* __JIT_OCAML_HH__ */
+#endif /* __SCICAML_HH__ */

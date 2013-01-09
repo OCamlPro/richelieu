@@ -203,7 +203,7 @@ let get_TransposeExp_Kind s pos =
 
 
 external jit_ocaml_get_double : string -> int -> float =
-    "jit_ocaml_get_double_c"
+    "scicaml_get_double_c"
 let get_double s pos =
   let d = jit_ocaml_get_double s pos in
   let pos = pos + 8 in

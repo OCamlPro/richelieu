@@ -39,7 +39,7 @@ extern "C"
 #include "sparse.hxx"
 #include "parser.hxx"
 
-#include "jit_ocaml.hxx"
+#include "scicaml.hxx"
 
 /*
 We must declare all stubs as C functions, otherwise they cannot be

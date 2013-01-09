@@ -21,10 +21,7 @@
 #include "stepvisitor.hxx"
 #include "configvariable.hxx"
 
-#include "jit_ocaml.hxx"
-extern "C" {
-#include "jit_ocaml.h"
-}
+#include "scicaml.hxx"
 
 #include "scilabWrite.hxx"
 #include "runner.hxx"
@@ -132,6 +129,12 @@ void printAstTask(ast::Exp *tree, bool timed)
     }
 }
 
+static char* (*local_jit_ocaml_analyze)(char *buf);
+
+void set_jit_ocaml_analyse(char* (*jit_ocaml_analyze_f)(char *buf))
+{
+  local_jit_ocaml_analyze = jit_ocaml_analyze_f;
+}
 
 /*
 ** Exec Tree
@@ -152,8 +155,9 @@ void execAstTask(ast::Exp* tree, bool timed, bool ASTtimed, bool execVerbose)
     }
 
     char *buf = scicaml_ast2string(tree);
-    buf = jit_ocaml_analyze(buf);
+    buf = scicaml_analyze(buf);
     ast::Exp* ocaml_tree = scicaml_string2ast(buf);
+    free(buf);
     /* uncomment these lines to verify that the translation is IDEMPOTENT
 
     char *buf2 = scicaml_ast2string(ocaml_tree);

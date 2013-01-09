@@ -11,7 +11,7 @@
  */
 
 #include <stdlib.h>
-#include "jit_ocaml.hxx"
+#include "scicaml.hxx"
 
 #include <all.hxx>
 #include <commentexp.hxx>

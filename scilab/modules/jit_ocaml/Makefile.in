@@ -148,7 +148,7 @@ am__installdirs = "$(DESTDIR)$(pkglibdir)" \
 	"$(DESTDIR)$(libscijit_ocaml_la_rootdir)"
 LTLIBRARIES = $(noinst_LTLIBRARIES) $(pkglib_LTLIBRARIES)
 libocpsci_la_LIBADD =
-am_libocpsci_la_OBJECTS = libocpsci_la-jit_ocaml.lo \
+am_libocpsci_la_OBJECTS = libocpsci_la-scicaml_stubs.lo \
 	libocpsci_la-ocpsci_gw.lo libocpsci_la-ocpsci_stubs.lo
 libocpsci_la_OBJECTS = $(am_libocpsci_la_OBJECTS)
 libscijit_ocaml_la_DEPENDENCIES = ocamlcode.o
@@ -160,15 +160,6 @@ DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/modules/core/includes
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
 am__mv = mv -f
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-LTCOMPILE = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
-	--mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
-	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
-	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
-	$(LDFLAGS) -o $@
 CXXCOMPILE = $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
 	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS)
 LTCXXCOMPILE = $(LIBTOOL) --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
@@ -576,7 +567,7 @@ libscijit_ocaml_la_LIBADD = ocamlcode.o
 libscijit_ocaml_la_SOURCES = $(JIT_OCAML_CPP_SOURCES)
 noinst_LTLIBRARIES = libocpsci.la
 libocpsci_la_SOURCES = \
-    src/c/jit_ocaml.c \
+    src/cpp/scicaml_stubs.cpp \
     src/cpp/ocpsci_gw.cpp \
     src/cpp/ocpsci_stubs.cpp
 
@@ -639,7 +630,7 @@ CLEANFILES = \
 	$(OCAML_CMIS)  \
 	$(OCAML_CMXS)  \
 	$(OCAML_OBJS)  \
-	jit_ocaml.o \
+	scicaml_stubs.o \
 	ocaml_parser \
 	src/lex/*.cm* \
 	src/lex/*.o \
@@ -654,7 +645,7 @@ CLEANFILES = \
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .sci .ml .mli .mll .mly .cmi .cmx .bin .c .cpp .lo .o .obj
+.SUFFIXES: .sci .ml .mli .mll .mly .cmi .cmx .bin .cpp .lo .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(top_srcdir)/Makefile.incl.am $(srcdir)/.depend_ocaml $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -738,39 +729,11 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libocpsci_la-jit_ocaml.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libocpsci_la-ocpsci_gw.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libocpsci_la-ocpsci_stubs.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libocpsci_la-scicaml_stubs.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libscijit_ocaml_la-scicaml_ast2string.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libscijit_ocaml_la-scicaml_string2ast.Plo@am__quote@
-
-.c.o:
-@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(COMPILE) -c $<
-
-.c.obj:
-@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
-
-.c.lo:
-@am__fastdepCC_TRUE@	$(LTCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
-
-libocpsci_la-jit_ocaml.lo: src/c/jit_ocaml.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libocpsci_la_CPPFLAGS) $(CPPFLAGS) $(libocpsci_la_CFLAGS) $(CFLAGS) -MT libocpsci_la-jit_ocaml.lo -MD -MP -MF $(DEPDIR)/libocpsci_la-jit_ocaml.Tpo -c -o libocpsci_la-jit_ocaml.lo `test -f 'src/c/jit_ocaml.c' || echo '$(srcdir)/'`src/c/jit_ocaml.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libocpsci_la-jit_ocaml.Tpo $(DEPDIR)/libocpsci_la-jit_ocaml.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/c/jit_ocaml.c' object='libocpsci_la-jit_ocaml.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libocpsci_la_CPPFLAGS) $(CPPFLAGS) $(libocpsci_la_CFLAGS) $(CFLAGS) -c -o libocpsci_la-jit_ocaml.lo `test -f 'src/c/jit_ocaml.c' || echo '$(srcdir)/'`src/c/jit_ocaml.c
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -792,6 +755,13 @@ libocpsci_la-jit_ocaml.lo: src/c/jit_ocaml.c
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LTCXXCOMPILE) -c -o $@ $<
+
+libocpsci_la-scicaml_stubs.lo: src/cpp/scicaml_stubs.cpp
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libocpsci_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libocpsci_la-scicaml_stubs.lo -MD -MP -MF $(DEPDIR)/libocpsci_la-scicaml_stubs.Tpo -c -o libocpsci_la-scicaml_stubs.lo `test -f 'src/cpp/scicaml_stubs.cpp' || echo '$(srcdir)/'`src/cpp/scicaml_stubs.cpp
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libocpsci_la-scicaml_stubs.Tpo $(DEPDIR)/libocpsci_la-scicaml_stubs.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='src/cpp/scicaml_stubs.cpp' object='libocpsci_la-scicaml_stubs.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libocpsci_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libocpsci_la-scicaml_stubs.lo `test -f 'src/cpp/scicaml_stubs.cpp' || echo '$(srcdir)/'`src/cpp/scicaml_stubs.cpp
 
 libocpsci_la-ocpsci_gw.lo: src/cpp/ocpsci_gw.cpp
 @am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libocpsci_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libocpsci_la-ocpsci_gw.lo -MD -MP -MF $(DEPDIR)/libocpsci_la-ocpsci_gw.Tpo -c -o libocpsci_la-ocpsci_gw.lo `test -f 'src/cpp/ocpsci_gw.cpp' || echo '$(srcdir)/'`src/cpp/ocpsci_gw.cpp

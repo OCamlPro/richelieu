@@ -10,7 +10,7 @@
  *
  */
 
-#include "jit_ocaml.hxx"
+#include "scicaml.hxx"
 
 /* TODO: call the destructor of the C++ AST when it becomes useless */
 
@@ -24,7 +24,6 @@ ast::Exp* ast_saved = NULL;
 #include <iostream>
 #include "location.hxx"
 
-#include "jit_ocaml.hxx"
 #include "visitor_common.hxx"
 //#include "runvisitor.hxx"
 //#include "execvisitor.hxx"
