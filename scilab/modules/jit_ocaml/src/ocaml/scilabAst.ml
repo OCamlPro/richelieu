@@ -85,9 +85,10 @@ and functionDec =  {
 and exp = {
   exp_location : Location.t;
   exp_desc : exp_desc;
-  exp_info : exp_info;
+(*  exp_info : exp_info; *)
 }
 
+(*
 and exp_info = {
   is_verbose : bool;
   is_break : bool;
@@ -97,6 +98,7 @@ and exp_info = {
   is_continue : bool;
   is_continuable  : bool;
 }
+*)
 
 and exp_desc =
   AssignExp of assignExp
@@ -424,7 +426,7 @@ in run_CallExp.hxx
 *)
 
 
-
+(*
 let dummy_info = {
   is_verbose = false;
   is_break = false;
@@ -434,6 +436,8 @@ let dummy_info = {
   is_continue = false;
   is_continuable = false;
 }
+*)
+
 let dummy_loc = {
   first_line = 0;
   first_column = 0;

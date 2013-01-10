@@ -27,7 +27,7 @@ extern "C" {
   value scicaml_set_double_c(value s_v, value pos_v, value d_v);
 }
 
-static value scicaml_registered_callback;
+static value scicaml_registered_callback = Val_unit;
 
 value scicaml_register_callback_c(value callback)
 {

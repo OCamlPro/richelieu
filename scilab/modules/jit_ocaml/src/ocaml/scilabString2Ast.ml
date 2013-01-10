@@ -60,16 +60,19 @@ let get_ast s pos =
   let is_continue, pos = get_bool s pos in
   let is_continuable, pos = get_bool s pos in
 
-  let exp_info = {
+  let exp_info = ()
+(*{
     is_verbose;
     is_break; is_breakable;
     is_return; is_returnable;
     is_continue; is_continuable;
-  } in
-  code, exp_info, loc, pos
+  }
+*)
+    in
+  code, exp_info , loc, pos
 
-let mkexp exp_desc exp_info exp_location =
-  { exp_desc; exp_location; exp_info }
+let mkexp exp_desc (exp_info : unit) exp_location =
+  { exp_desc; exp_location (*; exp_info*) }
 
 
 let get_wstring s pos =
@@ -209,7 +212,7 @@ let get_double s pos =
   let pos = pos + 8 in
   d, pos
 
-let dummyExp = mkexp (SeqExp []) dummy_info dummy_loc
+let dummyExp = mkexp (SeqExp []) ()(*dummy_info*) dummy_loc
 
 let warning = ref None
 let return_dummyExp = ref false

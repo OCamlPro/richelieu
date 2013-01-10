@@ -107,6 +107,7 @@ public:
     Location loc = e->location_get();
     add_uint8(code);
     add_location(&e->location_get());
+    /*    
     add_uint8(e->is_verbose());
     add_uint8(e->is_break());
     add_uint8(e->is_breakable());
@@ -114,6 +115,7 @@ public:
     add_uint8(e->is_returnable());
     add_uint8(e->is_continue());
     add_uint8(e->is_continuable());
+    */
   }
 
   /* ensure that we have [size] bytes in the buffer */

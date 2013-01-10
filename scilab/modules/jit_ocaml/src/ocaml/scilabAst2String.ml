@@ -79,6 +79,7 @@ let buf_ast b exp code =
     Printf.fprintf stderr "buf_ast %d -> %d\n%!" (Buffer.length b) code;
   buf_uint8 b code;
   buf_location b exp.exp_location;
+(*
   let i = exp.exp_info in
   buf_bool b i.is_verbose;
   buf_bool b i.is_break;
@@ -87,6 +88,7 @@ let buf_ast b exp code =
   buf_bool b i.is_returnable;
   buf_bool b i.is_continue;
   buf_bool b i.is_continuable;
+*)
   ()
 
 let buf_IntExp_Prec b prec =
@@ -360,7 +362,7 @@ and buf_vars b vars =
   Array.iter (fun var ->
     buf_exp b { exp_desc = Var var;
                 exp_location = var.var_location;
-                exp_info = dummy_info;
+(*                exp_info = dummy_info; *)
               }
   ) vars
 
