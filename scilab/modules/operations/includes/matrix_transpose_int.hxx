@@ -10,6 +10,9 @@
  *
  */
 
+#ifndef __MATRIX_TRANSPOSE_INT_HH__
+#define __MATRIX_TRANSPOSE_INT_HH__
+
 template<typename T>
 void vTransposeIntMatrix(T* _pIntIn, int _iRowsIn, int _iColsIn, T* _pIntOut)
 {
@@ -20,3 +23,6 @@ void vTransposeIntMatrix(T* _pIntIn, int _iRowsIn, int _iColsIn, T* _pIntOut)
         _pIntOut[iNewCoord] = _pIntIn[iIndex];
     }
 }
+
+#endif
+
