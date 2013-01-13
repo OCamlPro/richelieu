@@ -1826,4 +1826,19 @@ public :
 };
 }
 
+
+#define WITH_SCICAML 1
+#ifdef WITH_SCICAML
+#define exec_visitprivate(e) \
+  if( scicaml_visit(e, this, SCICAML_EXEC_ACTION) ) visitprivate(e)
+
+// for now, instead of include "scicaml.h"
+extern int scicaml_visit(const ast::Exp &e, 
+			  ast::RunVisitor *visitor, int action);
+
+#else
+#define exec_visitprivate(e) visitprivate(e)
+#endif
+
 #endif // !AST_RUNVISITOR_HXX
+

@@ -129,13 +129,6 @@ void printAstTask(ast::Exp *tree, bool timed)
     }
 }
 
-static char* (*local_jit_ocaml_analyze)(char *buf);
-
-void set_jit_ocaml_analyse(char* (*jit_ocaml_analyze_f)(char *buf))
-{
-  local_jit_ocaml_analyze = jit_ocaml_analyze_f;
-}
-
 /*
 ** Exec Tree
 **
@@ -153,16 +146,6 @@ void execAstTask(ast::Exp* tree, bool timed, bool ASTtimed, bool execVerbose)
     {
         _timer.start();
     }
-
-    char *buf = scicaml_ast2string(tree);
-    buf = scicaml_analyze(buf);
-    ast::Exp* ocaml_tree = scicaml_string2ast(buf);
-    free(buf);
-    /* uncomment these lines to verify that the translation is IDEMPOTENT
-
-    char *buf2 = scicaml_ast2string(ocaml_tree);
-    jit_ocaml_analyze(buf2);
-    */
     if(ASTtimed)
     {
         exec = (ast::ExecVisitor*)new ast::TimedVisitor();
@@ -178,7 +161,7 @@ void execAstTask(ast::Exp* tree, bool timed, bool ASTtimed, bool execVerbose)
         exec = new ast::ExecVisitor();
     }
 
-    Runner::execAndWait(ocaml_tree, exec);
+    Runner::execAndWait(tree, exec);
     //delete exec;
 
     if(timed)

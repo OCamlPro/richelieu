@@ -15,193 +15,196 @@
 
 #include "runvisitor.hxx"
 
+// exec only
+#define SCICAML_EXEC_ACTION 0
+
 namespace ast
 {
 	class ExecVisitor : public RunVisitorT<ExecVisitor>
 	{
         void visit (const SeqExp  &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const MatrixExp &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const MatrixLineExp &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const CellExp &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const StringExp &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const CommentExp &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const IntExp &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const FloatExp &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const DoubleExp &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const BoolExp &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const NilExp &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const SimpleVar &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const ColonVar &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const DollarVar &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const ArrayListVar &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const FieldExp &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const OpExp &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const LogicalOpExp &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const AssignExp &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const CellCallExp &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const CallExp &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const IfExp &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const TryCatchExp &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const WhileExp &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const ForExp &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const BreakExp &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const ContinueExp &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const ReturnExp &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const SelectExp &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const CaseExp &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const ArrayListExp &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const AssignListExp &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const NotExp &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const TransposeExp &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const VarDec &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit (const FunctionDec &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
 
         void visit(const ListExp &e)
         {
-            visitprivate(e);
+            exec_visitprivate(e);
         }
     };
 }

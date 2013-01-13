@@ -16,8 +16,22 @@
 #include "ast.hxx"
 #include "exp.hxx"
 
-extern char* scicaml_ast2string(ast::Exp*);
+extern char* scicaml_ast2string(const ast::Exp* e);
 extern ast::Exp* scicaml_string2ast(char*);
-extern char* scicaml_analyze(char*);
+
+// extern char* scicaml_analyze(char*);
+
+#include "runvisitor.hxx"
+
+// scicaml_visit() is supposed to exec a node of the AST
+// and modify the runvisitor to set the result.
+
+// action is either 
+// 0 for exec
+// 1 for print and exec
+// 2 for time exec
+
+extern int scicaml_visit(const ast::Exp &e, 
+			  ast::RunVisitor *visitor, int action);
 
 #endif /* __SCICAML_HH__ */

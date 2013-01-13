@@ -852,12 +852,9 @@ and interp_at_least_one env exp =
     None -> failwith "ScilabInterp.interp_at_least_one"
   | Some t -> t
 
-let interp exp =
+let interp exp expected =
   ScilabContext.clear (ScilabContext.getInstance ());
-  let results = interp toplevel_env exp in
-  match results with
-  | None -> Sci.empty_double ()
-  | Some v -> v
+  interp_rhs expected toplevel_env exp
 
 let unicode_of_ascii s =
   let len = String.length s in
@@ -934,7 +931,8 @@ let _ =
   let ctx = ScilabContext.getInstance () in
   let macro_name = unicode_of_ascii "SCI" in
   ScilabContext.put ctx (ScilabContext.new_symbol macro_name)
-    (Sci.string (unicode_of_ascii (Unix.getcwd ())))
+    (Sci.string (unicode_of_ascii (Unix.getcwd ())));
+  ()
 
 
 (* TODO: other functions that we need to define here, if we don't use

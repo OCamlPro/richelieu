@@ -253,8 +253,8 @@ static ast::Exp* get_exp(void)
   int code = get_uint8();
   // std::cerr << "    code = " << code << std::endl;
   Location *loc = get_location();
-  /*
   int is_verbose = get_bool();
+  /*
   int is_break = get_bool();
   int is_breakable = get_bool();
   int is_return = get_bool();
@@ -528,8 +528,8 @@ static ast::Exp* get_exp(void)
     exit(2);
   }
 
-  /*
   exp->set_verbose(is_verbose);
+  /*
   if(is_break) exp->break_set();
   if(is_breakable) exp->breakable_set();
   if(is_return) exp->return_set();

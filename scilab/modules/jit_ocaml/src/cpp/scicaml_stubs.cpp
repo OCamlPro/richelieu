@@ -13,12 +13,15 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+extern "C" {
 #include <caml/mlvalues.h>
 #include <caml/memory.h>
 #include <caml/callback.h>
 #include <caml/alloc.h>
 #include <stdlib.h>
+}
 #include "scicaml.hxx"
+#include "ocpsci.hxx"
 
 extern "C" {
   extern void caml_startup(char** argv);
@@ -36,6 +39,7 @@ value scicaml_register_callback_c(value callback)
   return Val_unit;
 }
 
+/*
 char* scicaml_analyze(char *buf)
 {
   value ret;
@@ -45,10 +49,10 @@ char* scicaml_analyze(char *buf)
     argv[0] = NULL;
     caml_startup(argv);
   }
-  /*  fprintf(stderr, "%d %d %d %d\n", buf[0],buf[1],buf[2],buf[3]); */
-  ret = caml_callback(scicaml_registered_callback, (value)buf);
+  ret = caml_callback2(scicaml_registered_callback, (value)buf, Val_int(3));
   return buf;
 }
+*/
 
 value scicaml_get_double_c(value s_v, value pos_v)
 {
@@ -65,4 +69,41 @@ value scicaml_set_double_c(value s_v, value pos_v, value d_v)
 
   *(double*)(s+pos) = d;
   return Val_unit;
+}
+
+
+
+int scicaml_visit(const ast::Exp &e, 
+		   ast::RunVisitor *visitor, int action)
+{
+  int expected = visitor->expected_getSize();
+
+  if( scicaml_registered_callback == Val_unit ){
+    char *argv[1];
+    argv[0] = NULL;
+    caml_startup(argv);
+  }
+  /*  fprintf(stderr, "%d %d %d %d\n", buf[0],buf[1],buf[2],buf[3]); */
+  char *buf = scicaml_ast2string(&e);
+  value ret_v = caml_callback3(scicaml_registered_callback, (value)buf, 
+		       Val_int(action), Val_int(expected));
+  free(buf);
+
+  if( ret_v == Val_int(0) ){ // None => an error !
+    return 1;
+  } else {
+    ret_v = Field( ret_v, 0 );
+    int nresults = Wosize_val(ret_v);
+    
+    if( nresults == 1 ){
+      visitor->result_set( Scilab_val(Field(ret_v, 0) ) );
+    } else
+      if( nresults > 0 ){
+	for(int i=0; i<nresults; i++){
+	  visitor->result_set(i, Scilab_val(Field(ret_v, i) ) );
+	}
+      }  
+  }
+  // 1 has return means that we want to execute the visitprivate()
+  return 1;
 }

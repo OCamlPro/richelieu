@@ -10,13 +10,6 @@
  *
  */
 
-extern "C" {
-#include <caml/memory.h>
-#include <caml/fail.h>
-#include <caml/alloc.h>
-#include <caml/custom.h>
-#include <caml/callback.h>
-}
 extern "C"
 {
 #include "stdarg.h"
@@ -40,6 +33,7 @@ extern "C"
 #include "parser.hxx"
 
 #include "scicaml.hxx"
+#include "ocpsci.hxx"
 
 /*
 We must declare all stubs as C functions, otherwise they cannot be
@@ -121,7 +115,6 @@ extern "C" {
 
 }
 
-#define Scilab_val(v) (*((types::InternalType**) Data_custom_val(v)))
 
 /* types class hierarchy
 InternalType

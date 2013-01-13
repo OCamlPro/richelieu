@@ -25,13 +25,23 @@ let exec_ast =
   with _ -> false
 
 external jit_ocaml_register_callback_ml :
-  (string -> string) -> unit = "scicaml_register_callback_c"
+  (string -> int -> int ->
+   ScilabContext.t array option) -> unit = "scicaml_register_callback_c"
+
+type action =
+  ActionExec
+| ActionStep
+| ActionTimed
+| ActionAnalyse
 
 let _ =
   jit_ocaml_register_callback_ml
-    (fun s_c ->
+    (fun s_c action expected ->
       try
+        (* 1. convert the string into an AST *)
         let ast = ScilabString2Ast.ast_of_string s_c in
+
+        (* 2. verify that the conversion is idempotent *)
         let s2 = ScilabAst2String.string_of_ast ast in
         if debug then begin
           let s1 = ScilabString2Ast.copy_string s_c in
@@ -44,36 +54,35 @@ let _ =
             print_newline ()
           end;
 
-        if exec_ast then begin
-(*
+        (* 3. execute the code *)
+        (*
           Printf.fprintf stderr "Context before:\n%s%!"
-            (ScilabContext.to_string ());
-*)
-          begin
-          try
-            let t0 = Unix.gettimeofday () in
-            Printf.fprintf stderr "ocamlvalue= %s\n%!"
-              (ScilabInternalType.to_string
-                 (ScilabInterp.interp ast));
-            let t1 = Unix.gettimeofday () in
-            Printf.fprintf stderr "timing : %.3fs\n%!" (t1 -. t0);
-          with e ->
-            Printf.fprintf stderr "ocamlvalue= exception %S\n%!"
-              (Printexc.to_string e);
-          end;
-          ScilabContext.clear (ScilabContext.getInstance());
-(*
-          Printf.fprintf stderr "Context after:\n%s%!"
-            (ScilabContext.to_string ());
-*)
+          (ScilabContext.to_string ());
+        *)
+        try
+          let t0 = Unix.gettimeofday () in
+          let res = ScilabInterp.interp ast expected in
+          let list = Array.to_list res in
+          let list = List.map ScilabInternalType.to_string list in
+          Printf.fprintf stderr "ocamlvalue= %s\n%!"
+            (String.concat "," list);
+          let t1 = Unix.gettimeofday () in
+          Printf.fprintf stderr "timing : %.3fs\n%!" (t1 -. t0);
+          Some res
+        with e ->
+  (* TODO: set a Scilab error in case of ... error ! *)
+          Printf.fprintf stderr "ocamlvalue= exception %S\n%!"
+            (Printexc.to_string e);
+          None
+      (*
+        Printf.fprintf stderr "Context after:\n%s%!"
+        (ScilabContext.to_string ());
+      *)
 
-        end;
-
-        s2
       with e ->
         Printf.fprintf stderr "jit_ocaml_register_callback_ml: exception %S\n%!"
           (Printexc.to_string e);
-        s_c
+        None
     )
 
 let main () = ()

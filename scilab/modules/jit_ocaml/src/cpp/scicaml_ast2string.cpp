@@ -12,10 +12,6 @@
 
 #include "scicaml.hxx"
 
-/* TODO: call the destructor of the C++ AST when it becomes useless */
-
-ast::Exp* ast_saved = NULL;
-
 #include <time.h>
 #include <string>
 #include <iostream>
@@ -107,8 +103,8 @@ public:
     Location loc = e->location_get();
     add_uint8(code);
     add_location(&e->location_get());
-    /*    
     add_uint8(e->is_verbose());
+    /*    
     add_uint8(e->is_break());
     add_uint8(e->is_breakable());
     add_uint8(e->is_return());
@@ -777,13 +773,12 @@ class SerializeVisitor : public SerializeVisitorT<SerializeVisitor>
 
 
 
-char* scicaml_ast2string(ast::Exp* ast)
+char* scicaml_ast2string(const ast::Exp* ast)
 {
   // std::cerr << "scicaml_ast2string" << std::endl;
 
   ast::SerializeVisitor visitor;
 
   ast->accept(visitor);
-  ast_saved = ast;
   return visitor.get_buf();
 }
