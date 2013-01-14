@@ -3,20 +3,24 @@
   open Lexing
   open ScilabParser
 
+  exception Heterous_str
+
   let matrix_level = ref 0
 
-  let last_token = ref EOF
+  let last_token = ref SOF
 
   let str_cmt = ref ""
 
   let str = ref ""
+
+  let str_err = ref ""
 
   let shellmode_on = ref false
 
   (* We need this when we parse several files *)
   let init_lexer_var () =
     shellmode_on := false;
-    last_token := EOF;
+    last_token := SOF;
     matrix_level := 0
 
   let print_pos pos =
@@ -29,8 +33,13 @@
     Printf.printf "; curr_pos :%i \n" lexbuf.lex_curr_pos
 
   let return_token tok =
+    if !shellmode_on then shellmode_on := false; 
     last_token := tok;
     tok
+
+  let return_id tok =
+    last_token := tok;
+    tok 
 
   let return_control lexbuf =
     lexbuf.lex_curr_p <- { lexbuf.lex_curr_p with
@@ -41,16 +50,7 @@
     last_token := tok;
     shellmode_on := false;
     tok
-    
-      
-  let set_last_token_spaces () =
-    if !matrix_level <> 0 & (!last_token = COMMA || !last_token = PLUS)
-    then ()
-    else 
-      last_token := EOF
-      (* if !matrix_level = 0  *)
-      (* then last_token := EOF *)
-      (* else () *)
+
 
   let is_transposable () = match !last_token with
     | ID _ | RBRACK | RBRACE | VARINT _ | VARFLOAT _
@@ -61,8 +61,8 @@
     | EOL -> true
     | _ -> false
 
-  let is_EOF () = match !last_token with
-    | EOF -> true
+  let is_SOF () = match !last_token with
+    | SOF -> true
     | _ -> false
 
   let is_plus () = match !last_token with
@@ -72,6 +72,19 @@
   let is_comma () = match !last_token with
     | COMMA -> true
     | _ -> false
+
+  let in_matrix () =
+    !matrix_level <> 0
+
+  let set_last_token_spaces () =
+    if (in_matrix () & (!last_token = COMMA || !last_token = PLUS)) ||
+       (!last_token = EOL  || !last_token = SOF)
+    then ()
+    else 
+      last_token := SPACES
+      (* if !matrix_level = 0  *)
+      (* then last_token := EOF *)
+      (* else () *)
         
   let make_error_string lexbuf =
     let curr = lexbuf.Lexing.lex_curr_p in
@@ -195,9 +208,11 @@ let controltimes   = "*." [^'0'-'9''.']
 let controlrdivide = "/." [^'0'-'9''.']
 let controlldivide = "\\." [^'0'-'9''.']
 
+let wierd_op_version5 = "`--"
+
 let lb = next spaces*
 
-let shellmode_arg = [^ '\t''\r''\n'','';''\'''\"']+
+let shellmode_arg = [^ ' ''\t''\r''\n'','';''\'''\"' '(' '=' '/'][^ '\t''\r''\n'','';''\'''\"'' ']*
 
 let assign = "="
 
@@ -207,11 +222,14 @@ rule token = parse
                                    then shellmode lexbuf
                                    else token lexbuf }
   | blankline                    { newline_lex lexbuf;
+                                   if !shellmode_on then shellmode_on := false;
                                    if (is_EOL ()) then token lexbuf else return_token EOL }
   | newline                      { newline_lex lexbuf;
+                                   if !shellmode_on then shellmode_on := false;
                                    if (is_EOL ()) then token lexbuf else return_token EOL }
   | emptyline                    { newline_lex lexbuf;
                                    newline_lex lexbuf;
+                                   if !shellmode_on then shellmode_on := false;
                                    if (is_EOL ()) then token lexbuf else return_token EOL }
   | startlinecomment             { str_cmt := ""; comment lexbuf }
   | startblockcomment            { str_cmt := ""; commentblock lexbuf }
@@ -235,7 +253,7 @@ rule token = parse
   | "return"                     { return_token RETURN }
   | "break"                      { return_token BREAK }
   | "continue"                   { return_token CONTINUE }
-  | "="                          { return_token ASSIGN }
+  | assign                       { return_token ASSIGN }
   | "for"                        { return_token FOR }
   | "hidden"                     { return_token HIDDEN }
   | "function"                   { return_token FUNCTION }
@@ -243,20 +261,20 @@ rule token = parse
   | "endfunction"                { return_token ENDFUNCTION }
   | dot                          { return_token DOT }
   | dotquote                     { return_token DOTQUOTE }
-  | lb newline                   { newline_lex lexbuf;
-                                   if is_plus () || is_comma ()
-                                   then token lexbuf
-                                   else
-                                     if !matrix_level > 0 
-                                     then return_token EOL 
-                                     else token lexbuf }
-  | lb newline spaces* plus      { return_token PLUS }
-  | lb newline spaces* minus     { return_token MINUS }
-  | lb newline spaces* times     { return_token TIMES }
-  | lb newline spaces* ldivide   { return_token LDIVIDE }
-  | lb newline spaces* rdivide   { return_token RDIVIDE }
+  | lb newline                   { newline_lex lexbuf; token lexbuf
+                                   (* if is_plus () || is_comma () *)
+                                   (* then token lexbuf *)
+                                   (* else *)
+                                   (*   if !matrix_level > 0  *)
+                                   (*   then return_token EOL  *)
+                                   (*   else token lexbuf *) }
+  (* | lb newline spaces* plus      { return_token PLUS } *)
+  (* | lb newline spaces* minus     { return_token MINUS } *)
+  (* | lb newline spaces* times     { return_token TIMES } *)
+  (* | lb newline spaces* ldivide   { return_token LDIVIDE } *)
+  (* | lb newline spaces* rdivide   { return_token RDIVIDE } *)
     (* We need those for 'op1 linebreak operator op2' cases *)
-  | lb startlinecomment          { discardcomment lexbuf }
+  (* | lb startlinecomment          { discardcomment lexbuf } *)
   | next                         { return_token LINEBREAK }
   | plus                         { return_token PLUS }
   | minus                        { return_token MINUS }
@@ -274,6 +292,7 @@ rule token = parse
   | krontimes                    { return_token KRONTIMES }
   | power                        { return_token POWER }
   | dotpower                     { return_token DOTPOWER }
+  | wierd_op_version5            { return_token WIERDOP }
   | equal                        { return_token EQ }
   | notequal                     { return_token NE }
   | lowerthan                    { return_token LT }
@@ -281,7 +300,8 @@ rule token = parse
   | lowerequal                   { return_token LE }
   | greaterequal                 { return_token GE }
   | comma                        { return_token COMMA }
-  | semicolon                    { return_token SEMI }
+  | semicolon                    { if !shellmode_on then shellmode_on := false;
+                                   return_token SEMI }
   | colon                        { return_token COLON }
   | integer as inum              { let num = float_of_string inum in
                                    (* Printf.printf "varint[%f]" num; *)
@@ -306,11 +326,9 @@ rule token = parse
   | boolandand                   { return_token ANDAND }
   | boolor                       { return_token OR }
   | booloror                     { return_token OROR }
-  | id as ident                  { if is_EOL () || is_EOF ()
-                                   then
-                                     if ident = "load" || ident = "exec" || ident = "cd" (* context should have those functions *)
-                                     then shellmode_on := true;
-                                       return_token (ID ident)
+  | id as ident                  { if (not (in_matrix ())) & (is_EOL () || is_SOF ())
+                                   then shellmode_on := true;
+                                   return_id (ID ident)
                                    (* (\*shellmode lexbuf*\) *)
                                    (*   else return_token (ID ident) *)
                                    (* else return_token (ID ident) *) }
@@ -338,10 +356,13 @@ and doublestr = parse
   | dquote quote                 { str := !str^"\'"; doublestr lexbuf }
   | quote dquote                 { str := !str^"\""; doublestr lexbuf }
   | quote quote                  { str := !str^"\'"; doublestr lexbuf }
-  | quote                        { failwith ("Error : Heterogeneous string detected, starting with \" and ending with \' "^(make_error_string lexbuf)) }
+  | quote                        { str_err := ("Error : Heterogeneous string detected, starting with \" and ending with \' ");
+                                   raise Heterous_str }
   | next newline                 { newline_lex lexbuf; doublestr lexbuf }
-  | newline                      { failwith ("Error : unexpected newline in a string "^(make_error_string lexbuf)) }
-  | eof                          { failwith ("Error : unexpected end of file in a string "^(make_error_string lexbuf)) }
+  | newline                      { str_err := ("Error : unexpected newline in a string ");
+                                   raise Heterous_str }
+  | eof                          { str_err := ("Error : unexpected end of file in a string ");
+                                   raise Heterous_str }
   | _ as c                       { str := !str^(String.make 1 c); doublestr lexbuf }
 
 and simplestr = parse
@@ -350,18 +371,21 @@ and simplestr = parse
   | dquote quote                 { str := !str^"\'"; simplestr lexbuf }
   | quote dquote                 { str := !str^"\""; simplestr lexbuf }
   | quote quote                  { str := !str^"\'"; simplestr lexbuf }
-  | dquote                       { failwith ("Error : Heterogeneous string detected, starting with \' and ending with \" "^(make_error_string lexbuf)) }
+  | dquote                       { str_err := ("Error : Heterogeneous string detected, starting with \' and ending with \" ");
+                                   raise Heterous_str }
   | next newline                 { newline_lex lexbuf; simplestr lexbuf }
-  | newline                      { failwith ("Error : unexpected newline in a string "^(make_error_string lexbuf)) }
-  | eof                          { failwith ("Error : unexpected end of file in a string "^(make_error_string lexbuf)) }
+  | newline                      { str_err := ("Error : unexpected newline in a string ");
+                                   raise Heterous_str }
+  | eof                          { str_err := ("Error : unexpected end of file in a string ");
+                                   raise Heterous_str }
   | _ as c                       { str := !str^(String.make 1 c); simplestr lexbuf }
       
 and shellmode = parse
-  | spaces*                      { shellmode lexbuf }
+  | spaces+                      { shellmode lexbuf }
+  | startlinecomment             { shellmode_on := false;
+                                   comment lexbuf }
   | semicolon                    { return_shell SEMI }
   | comma                        { return_shell COMMA }
-  | newline                      { newline_lex lexbuf;
-                                   return_shell EOL }
   | assign                       { return_shell ASSIGN }
   | lparen                       { return_shell LPAREN }
   | lowerthan                    { return_shell LT }
@@ -372,7 +396,7 @@ and shellmode = parse
                                    then return_shell QUOTE 
                                    else begin str := ""; simplestr lexbuf end }
   | dquote                       { shellmode_on := false; str := ""; doublestr lexbuf }
-  | shellmode_arg as arg         { return_shell (ID arg) }
+  | shellmode_arg as arg         { return_token (STR arg) }
   | eof                          { return_shell EOF }
 
 (* and matrix = parse *)
