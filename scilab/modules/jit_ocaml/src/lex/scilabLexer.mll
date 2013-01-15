@@ -3,7 +3,9 @@
   open Lexing
   open ScilabParser
 
-  exception Heterous_str
+  exception Err_str of string
+
+  exception Lex_err of string
 
   let matrix_level = ref 0
 
@@ -12,8 +14,6 @@
   let str_cmt = ref ""
 
   let str = ref ""
-
-  let str_err = ref ""
 
   let shellmode_on = ref false
 
@@ -212,7 +212,7 @@ let wierd_op_version5 = "`--"
 
 let lb = next spaces*
 
-let shellmode_arg = [^ ' ''\t''\r''\n'','';''\'''\"' '(' '=' '/'][^ '\t''\r''\n'','';''\'''\"'' ']*
+let shellmode_arg = [^ ' ''\t''\r''\n'','';''\'''\"' '(' '=' '/' '+'][^ '\t''\r''\n'','';''\'''\"'' ']*
 
 let assign = "="
 
@@ -333,7 +333,7 @@ rule token = parse
                                    (*   else return_token (ID ident) *)
                                    (* else return_token (ID ident) *) }
   | eof                          { return_token EOF }
-  | _ as c                       { Printf.printf "Lexing error : Unknow character \'%c\'" c;exit 1}
+  | _                            { raise (Lex_err ("Error : Unknow character ")) }
 
 and discardcomment = parse
   | newline                      { token lexbuf }
@@ -356,13 +356,10 @@ and doublestr = parse
   | dquote quote                 { str := !str^"\'"; doublestr lexbuf }
   | quote dquote                 { str := !str^"\""; doublestr lexbuf }
   | quote quote                  { str := !str^"\'"; doublestr lexbuf }
-  | quote                        { str_err := ("Error : Heterogeneous string detected, starting with \" and ending with \' ");
-                                   raise Heterous_str }
+  | quote                        { raise (Err_str "Error : Heterogeneous string detected, starting with \" and ending with \' ") }
   | next newline                 { newline_lex lexbuf; doublestr lexbuf }
-  | newline                      { str_err := ("Error : unexpected newline in a string ");
-                                   raise Heterous_str }
-  | eof                          { str_err := ("Error : unexpected end of file in a string ");
-                                   raise Heterous_str }
+  | newline                      { raise (Err_str "Error : unexpected newline in a string ") }
+  | eof                          { raise (Err_str "Error : unexpected end of file in a string ") }
   | _ as c                       { str := !str^(String.make 1 c); doublestr lexbuf }
 
 and simplestr = parse
@@ -371,19 +368,39 @@ and simplestr = parse
   | dquote quote                 { str := !str^"\'"; simplestr lexbuf }
   | quote dquote                 { str := !str^"\""; simplestr lexbuf }
   | quote quote                  { str := !str^"\'"; simplestr lexbuf }
-  | dquote                       { str_err := ("Error : Heterogeneous string detected, starting with \' and ending with \" ");
-                                   raise Heterous_str }
+  | dquote                       { raise (Err_str "Error : Heterogeneous string detected, starting with \' and ending with \" ") }
   | next newline                 { newline_lex lexbuf; simplestr lexbuf }
-  | newline                      { str_err := ("Error : unexpected newline in a string ");
-                                   raise Heterous_str }
-  | eof                          { str_err := ("Error : unexpected end of file in a string ");
-                                   raise Heterous_str }
+  | newline                      { raise (Err_str "Error : unexpected newline in a string ") }
+  | eof                          { raise (Err_str "Error : unexpected end of file in a string ") }
   | _ as c                       { str := !str^(String.make 1 c); simplestr lexbuf }
       
 and shellmode = parse
   | spaces+                      { shellmode lexbuf }
   | startlinecomment             { shellmode_on := false;
                                    comment lexbuf }
+  | plus                         { return_shell PLUS }
+  | minus                        { return_shell MINUS }
+  | rdivide                      { return_shell RDIVIDE }
+  | dotrdivide                   { return_shell DOTRDIVIDE }
+  | controlrdivide               { return_control lexbuf; return_shell CONTROLRDIVIDE }
+  | kronrdivide                  { return_shell KRONRDIVIDE }
+  | ldivide                      { return_shell LDIVIDE }
+  | dotldivide                   { return_shell DOTLDIVIDE }  
+  | controlldivide               { return_control lexbuf; return_shell CONTROLLDIVIDE }
+  | kronldivide                  { return_shell KRONLDIVIDE }
+  | times                        { return_shell TIMES }
+  | dottimes                     { return_shell DOTTIMES }
+  | controltimes                 { return_control lexbuf; return_shell CONTROLTIMES }
+  | krontimes                    { return_shell KRONTIMES }
+  | power                        { return_shell POWER }
+  | dotpower                     { return_shell DOTPOWER }
+  | wierd_op_version5            { return_shell WIERDOP }
+  | equal                        { return_shell EQ }
+  | notequal                     { return_shell NE }
+  | lowerthan                    { return_shell LT }
+  | greaterthan                  { return_shell GT }
+  | lowerequal                   { return_shell LE }
+  | greaterequal                 { return_shell GE }
   | semicolon                    { return_shell SEMI }
   | comma                        { return_shell COMMA }
   | assign                       { return_shell ASSIGN }

@@ -581,6 +581,7 @@ functionDeclarationBreak :
 | SEMI EOL			{ }
 | COMMA				{ }
 | COMMA EOL			{ }
+| COMMA COMMA                   { }
 
 functionBody :
 | expressions                    { $1 }
@@ -2271,16 +2272,24 @@ tryControl :
 tryTok :
 | TRY                                              { }
 | TRY SEMI                                         { }
+| TRY COMMA                                        { }
+| TRY EOL                                          { }
+| TRY SEMI EOL                                     { }
+| TRY COMMA EOL                                    { }
 
 catchTok :
 | CATCH                                            { }
 | CATCH SEMI                                       { }
+| CATCH COMMA                                      { }
+| CATCH EOL                                        { }
+| CATCH SEMI EOL                                   { }
+| CATCH COMMA EOL                                  { }
 
 catchBody :
 | expressions                                      { match $1.exp_desc with | SeqExp l -> l | _ -> [] }
-| EOL expressions                                  { match $2.exp_desc with | SeqExp l -> l | _ -> [] }
+/*| EOL expressions                                  { match $2.exp_desc with | SeqExp l -> l | _ -> [] }
 | COMMA expressions                                { match $2.exp_desc with | SeqExp l -> l | _ -> [] }
-| EOL                                              { [] }
+| EOL                                              { [] }*/
 | /* Empty */                                      { [] }
 
 

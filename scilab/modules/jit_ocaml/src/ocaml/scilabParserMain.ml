@@ -12,19 +12,22 @@ let usage = "Usage: ./main -t [fichier]  (stdin par default)"
 let list_ext = [".sci"; ".sce"; ".tst"; (* ".dia.ref" *)]
 
 let print_exn_infos =
-  Printf.printf " -> Exception at token : %s (line %i, character %i) \n\n"
+  Printf.printf "Error at token : %s (line %i, character %i) \n\n"
+
+let print_lex_infos =
+  Printf.printf "at token : %s (line %i, character %i) \n\n"
 
 let run_test file =
   (* let regexp = Str.regexp ".*bug.*.tst" in *)
   let ch = if file = "" then stdin else open_in file in
-  Printf.printf "Testing %s :" file;
+  Printf.printf "Testing %s : " file;
   let lexbuf = Lexing.from_channel ch in
   ScilabLexer.init_lexer_var ();
   try
     let ast = ScilabParser.program ScilabLexer.token lexbuf in
     begin
       match ast with
-        | ScilabAst.Exp exp -> (* test_parser exp; *) print_endline (* (ScilabAstPrinter.to_string exp) *) " -> OK\n"
+        | ScilabAst.Exp exp -> (* test_parser exp; *) print_endline (* (ScilabAstPrinter.to_string exp) *) "-> OK\n"
         | _ -> ()
     end;
     flush stdout;
@@ -36,13 +39,21 @@ let run_test file =
     let tok = Lexing.lexeme lexbuf in
     print_exn_infos tok line cnum;
     close_in ch
-    | ScilabLexer.Heterous_str ->
+    | ScilabLexer.Err_str str_err ->
         let curr = lexbuf.Lexing.lex_curr_p in
         let line = curr.Lexing.pos_lnum in
         let cnum = curr.Lexing.pos_cnum - curr.Lexing.pos_bol - 1 in
         let tok = Lexing.lexeme lexbuf in
-        print_endline !ScilabLexer.str_err;
-        print_exn_infos tok line cnum;
+        print_string str_err;
+        print_lex_infos tok line cnum;
+        close_in ch
+    | ScilabLexer.Lex_err str_lex ->
+        let curr = lexbuf.Lexing.lex_curr_p in
+        let line = curr.Lexing.pos_lnum in
+        let cnum = curr.Lexing.pos_cnum - curr.Lexing.pos_bol - 1 in
+        let tok = Lexing.lexeme lexbuf in
+        print_string str_lex;
+        print_lex_infos tok line cnum;
         close_in ch
     | _ as err -> raise err 
 
@@ -98,17 +109,106 @@ let _ =
            "/home/michael/scilab.5/scilab-5.4.0/modules/core/tests/nonreg_tests";
            "/home/michael/scilab.5/scilab-5.4.0/modules/core/tests/benchmarks";
 
+           "/home/michael/scilab.5/scilab-5.4.0/modules/data_structures/tests/unit_tests";
+           "/home/michael/scilab.5/scilab-5.4.0/modules/data_structures/tests/nonreg_tests";
+
+           "/home/michael/scilab.5/scilab-5.4.0/modules/demo_tools/tests/unit_tests";
+           "/home/michael/scilab.5/scilab-5.4.0/modules/demo_tools/tests/nonreg_tests";
+
+           "/home/michael/scilab.5/scilab-5.4.0/modules/development_tools/tests/unit_tests";
+           "/home/michael/scilab.5/scilab-5.4.0/modules/development_tools/tests/nonreg_tests";
+
+           "/home/michael/scilab.5/scilab-5.4.0/modules/differential_equations/tests/unit_tests";
+           "/home/michael/scilab.5/scilab-5.4.0/modules/differential_equations/tests/nonreg_tests";
            
+           "/home/michael/scilab.5/scilab-5.4.0/modules/dynamic_link/tests/unit_tests";
+           "/home/michael/scilab.5/scilab-5.4.0/modules/dynamic_link/tests/nonreg_tests";
+
+           "/home/michael/scilab.5/scilab-5.4.0/modules/elementary_functions/tests/unit_tests";
+           "/home/michael/scilab.5/scilab-5.4.0/modules/elementary_functions/tests/nonreg_tests";  
+
+           "/home/michael/scilab.5/scilab-5.4.0/modules/fftw/tests/unit_tests";
+           "/home/michael/scilab.5/scilab-5.4.0/modules/fftw/tests/nonreg_tests";
+
+           "/home/michael/scilab.5/scilab-5.4.0/modules/fileio/tests/unit_tests";
+           "/home/michael/scilab.5/scilab-5.4.0/modules/fileio/tests/nonreg_tests";
+           
+           "/home/michael/scilab.5/scilab-5.4.0/modules/functions/tests/unit_tests";
+           "/home/michael/scilab.5/scilab-5.4.0/modules/functions/tests/nonreg_tests";
+
+           "/home/michael/scilab.5/scilab-5.4.0/modules/genetic_algorithms/tests/unit_tests";
+           "/home/michael/scilab.5/scilab-5.4.0/modules/genetic_algorithms/tests/nonreg_tests";
+
+           "/home/michael/scilab.5/scilab-5.4.0/modules/graphic_export/tests/unit_tests";
+           "/home/michael/scilab.5/scilab-5.4.0/modules/graphic_export/tests/nonreg_tests";
+
+           "/home/michael/scilab.5/scilab-5.4.0/modules/graphic_objects/tests/unit_tests";
+           "/home/michael/scilab.5/scilab-5.4.0/modules/graphic_objects/tests/nonreg_tests";
+
+           "/home/michael/scilab.5/scilab-5.4.0/modules/graphics/tests/unit_tests";
+           "/home/michael/scilab.5/scilab-5.4.0/modules/graphics/tests/nonreg_tests";
+
+           "/home/michael/scilab.5/scilab-5.4.0/modules/gui/tests/unit_tests";
+           "/home/michael/scilab.5/scilab-5.4.0/modules/gui/tests/nonreg_tests";
+
+           "/home/michael/scilab.5/scilab-5.4.0/modules/hdf5/tests/unit_tests";
+           "/home/michael/scilab.5/scilab-5.4.0/modules/hdf5/tests/nonreg_tests";
+
+           "/home/michael/scilab.5/scilab-5.4.0/modules/helptools/tests/unit_tests";
+           "/home/michael/scilab.5/scilab-5.4.0/modules/helptools/tests/nonreg_tests";
+
+           "/home/michael/scilab.5/scilab-5.4.0/modules/history_manager/tests/unit_tests";
+           "/home/michael/scilab.5/scilab-5.4.0/modules/history_manager/tests/nonreg_tests";
+
+           "/home/michael/scilab.5/scilab-5.4.0/modules/integer/tests/unit_tests";
+           "/home/michael/scilab.5/scilab-5.4.0/modules/integer/tests/nonreg_tests";
+
+           "/home/michael/scilab.5/scilab-5.4.0/modules/interpolation/tests/unit_tests";
+           "/home/michael/scilab.5/scilab-5.4.0/modules/interpolation/tests/nonreg_tests";
+
+           "/home/michael/scilab.5/scilab-5.4.0/modules/io/tests/unit_tests";
+           "/home/michael/scilab.5/scilab-5.4.0/modules/io/tests/nonreg_tests";
+
+           "/home/michael/scilab.5/scilab-5.4.0/modules/jvm/tests/unit_tests";
+           "/home/michael/scilab.5/scilab-5.4.0/modules/jvm/tests/nonreg_tests";
+
+           "/home/michael/scilab.5/scilab-5.4.0/modules/linear_algebra/tests/unit_tests";
+           "/home/michael/scilab.5/scilab-5.4.0/modules/linear_algebra/tests/nonreg_tests";
+
+           "/home/michael/scilab.5/scilab-5.4.0/modules/localization/tests/unit_tests";
+           "/home/michael/scilab.5/scilab-5.4.0/modules/localization/tests/nonreg_tests";
+
+           "/home/michael/scilab.5/scilab-5.4.0/modules/m2sci/tests/unit_tests";
+           "/home/michael/scilab.5/scilab-5.4.0/modules/m2sci/tests/nonreg_tests";
+
+           "/home/michael/scilab.5/scilab-5.4.0/modules/matio/tests/unit_tests";
+           "/home/michael/scilab.5/scilab-5.4.0/modules/matio/tests/nonreg_tests";
+
+           "/home/michael/scilab.5/scilab-5.4.0/modules/optimization/tests/unit_tests";
+           "/home/michael/scilab.5/scilab-5.4.0/modules/optimization/tests/nonreg_tests";
+
+           "/home/michael/scilab.5/scilab-5.4.0/modules/output_stream/tests/unit_tests";
+           "/home/michael/scilab.5/scilab-5.4.0/modules/output_stream/tests/nonreg_tests";
+
+           "/home/michael/scilab.5/scilab-5.4.0/modules/overloading/tests/unit_tests";
+           "/home/michael/scilab.5/scilab-5.4.0/modules/overloading/tests/nonreg_tests";
+
+           "/home/michael/scilab.5/scilab-5.4.0/modules/parallel/tests/unit_tests";
+           "/home/michael/scilab.5/scilab-5.4.0/modules/parallel/tests/nonreg_tests";
+
+           "/home/michael/scilab.5/scilab-5.4.0/modules/parameters/tests/unit_tests";
+           "/home/michael/scilab.5/scilab-5.4.0/modules/parameters/tests/nonreg_tests";
+
 (*            
-compatibility_functions/  elementary_functions/  graphic_objects/  io/               m2sci/            operations/     preferences/          sound/              tclsci/
-completion/               external_objects/      graphics/         javasci/          Makefile          optimization/   randlib/              sparse/             threads/
-console/                  fftw/                  gui/              jit_ocaml/        Makefile.am       output_stream/  renderer/             special_functions/  time/
-core/                     fileio/                hdf5/             jvm/              Makefile.in       overloading/    scicos/               spreadsheet/        types/
-data_structures/          functions/             helptools/        libscilab-cli/    matio/            parallel/       scicos_blocks/        statistics/         ui_data/
-demo_tools/               functions_manager/     history_browser/  libscilab-cli.la  memory_manager/   parameters/     scinotes/             string/             umfpack/
-development_tools/        genetic_algorithms/    history_manager/  libscilab.la      metanet/          parse/          scipad/               symbol/             windows_tools/
-differential_equations/   graph/                 integer/          linear_algebra/   mexlib/           polynomials/    signal_processing/    symbolic/           xcos/
-dynamic_link/             graphic_export/        interpolation/    localization/     modules_manager/  prebuildjava/   simulated_annealing/  system_env/         xml/
+operations/     preferences/          sound/              tclsci/
+optimization/   randlib/              sparse/             threads/
+output_stream/  renderer/             special_functions/  time/
+overloading/    scicos/               spreadsheet/        types/
+parallel/       scicos_blocks/        statistics/         ui_data/
+parameters/     scinotes/             string/             umfpack/
+parse/          scipad/               symbol/             windows_tools/
+polynomials/    signal_processing/    symbolic/           xcos/
+prebuildjava/   simulated_annealing/  system_env/         xml/
 *)
           
 
