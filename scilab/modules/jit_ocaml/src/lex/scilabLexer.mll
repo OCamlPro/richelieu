@@ -237,28 +237,68 @@ rule token = parse
   | quote                        { if (is_transposable ())
                                    then return_token QUOTE 
                                    else begin str := ""; simplestr lexbuf end }
-  | "if"                         { return_token IF }
-  | "then"                       { return_token THEN }
-  | "else"                       { return_token ELSE }
-  | "elseif"                     { return_token ELSEIF }
-  | "end"                        { return_token END }
-  | "select"                     { return_token SELECT }
-  | "switch"                     { return_token SWITCH }
-  | "otherwise"                  { return_token OTHERWISE }
-  | "case"                       { return_token CASE }
-  | "while"                      { return_token WHILE }
-  | "do"                         { return_token DO }
-  | "try"                        { return_token TRY }
-  | "catch"                      { return_token CATCH }
-  | "return"                     { return_token RETURN }
-  | "break"                      { return_token BREAK }
-  | "continue"                   { return_token CONTINUE }
+  | "if"                         { if not (in_matrix ())
+                                   then return_token IF
+                                   else return_token (ID ("if")) }
+  | "then"                       { if not (in_matrix ())
+                                   then return_token THEN
+                                   else return_token (ID ("then")) }
+  | "else"                       { if not (in_matrix ())
+                                   then return_token ELSE
+                                   else return_token (ID ("else")) }
+  | "elseif"                     { if not (in_matrix ())
+                                   then return_token ELSEIF
+                                   else return_token (ID ("elseif")) }
+  | "end"                        { if not (in_matrix ())
+                                   then return_token END
+                                   else return_token (ID ("end")) }
+  | "select"                     { if not (in_matrix ())
+                                   then return_token SELECT
+                                   else return_token (ID ("select")) }
+  | "switch"                     { if not (in_matrix ())
+                                   then return_token SWITCH
+                                   else return_token (ID ("switch")) }
+  | "otherwise"                  { if not (in_matrix ())
+                                   then return_token OTHERWISE
+                                   else return_token (ID ("otherwise")) }
+  | "case"                       { if not (in_matrix ())
+                                   then return_token CASE
+                                   else return_token (ID ("case")) }
+  | "while"                      { if not (in_matrix ())
+                                   then return_token WHILE
+                                   else return_token (ID ("while")) }
+  | "do"                         { if not (in_matrix ())
+                                   then return_token DO
+                                   else return_token (ID ("do")) }
+  | "try"                        { if not (in_matrix ())
+                                   then return_token TRY
+                                   else return_token (ID ("try")) }
+  | "catch"                      { if not (in_matrix ())
+                                   then return_token CATCH
+                                   else return_token (ID ("catch")) }
+  | "return"                     { return_token RETURN } (* return in matrix ?? *)
+  | "break"                      { if not (in_matrix ())
+                                   then return_token BREAK
+                                   else return_token (ID ("break")) }
+  | "continue"                   { if not (in_matrix ())
+                                   then return_token CONTINUE
+                                   else return_token (ID ("continue")) }
   | assign                       { return_token ASSIGN }
-  | "for"                        { return_token FOR }
-  | "hidden"                     { return_token HIDDEN }
-  | "function"                   { return_token FUNCTION }
-  | "#function"                  { return_token HIDDENFUNCTION }
-  | "endfunction"                { return_token ENDFUNCTION }
+  | "for"                        { if not (in_matrix ())
+                                   then return_token FOR
+                                   else return_token (ID ("for")) }
+  | "hidden"                     { if not (in_matrix ())
+                                   then return_token HIDDEN
+                                   else return_token (ID ("hidden")) }
+  | "function"                   { if not (in_matrix ())
+                                   then return_token FUNCTION
+                                   else return_token (ID ("function")) }
+  | "#function"                  { if not (in_matrix ())
+                                   then return_token HIDDENFUNCTION
+                                   else return_token (ID ("hiddenfunction")) }
+  | "endfunction"                { if not (in_matrix ())
+                                   then return_token ENDFUNCTION
+                                   else return_token (ID ("endfunction")) }
   | dot                          { return_token DOT }
   | dotquote                     { return_token DOTQUOTE }
   | lb newline                   { newline_lex lexbuf; token lexbuf
