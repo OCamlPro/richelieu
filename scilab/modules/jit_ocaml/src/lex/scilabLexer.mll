@@ -110,6 +110,13 @@
     let regexp = Str.regexp "['d''D']" in
     Str.global_replace regexp "e" str
 
+  let warning_only_scila5 msg lexbuf =
+    let curr = lexbuf.Lexing.lex_curr_p in
+    let line = curr.Lexing.pos_lnum in
+    let cnum = (curr.Lexing.pos_cnum - curr.Lexing.pos_bol - 1) in
+    Printf.printf "Warning : %s at line %i, character %i." msg line cnum 
+      
+
 }
 
 let spaces    = [' ' '\t']
@@ -290,9 +297,6 @@ rule token = parse
   | "hidden"                     { if not (in_matrix ())
                                    then return_token HIDDEN
                                    else return_token (ID ("hidden")) }
-  | "deff"                       { if not (in_matrix ())
-                                   then return_token DEFF
-                                   else return_token (ID ("deff")) }
   | "function"                   { if not (in_matrix ())
                                    then return_token FUNCTION
                                    else return_token (ID ("function")) }
@@ -399,7 +403,9 @@ and doublestr = parse
   | dquote quote                 { str := !str^"\'"; doublestr lexbuf }
   | quote dquote                 { str := !str^"\""; doublestr lexbuf }
   | quote quote                  { str := !str^"\'"; doublestr lexbuf }
-  | quote                        { raise (Err_str "Error : Heterogeneous string detected, starting with \" and ending with \' ") }
+  | quote                        { let msg = "Heterogeneous string, starting with \" and ending with \' only allowed in scilab 5" in
+                                   warning_only_scila5 msg lexbuf;
+                                   return_token (STR !str) }
   | next newline                 { newline_lex lexbuf; doublestr lexbuf }
   | newline                      { raise (Err_str "Error : unexpected newline in a string ") }
   | eof                          { raise (Err_str "Error : unexpected end of file in a string ") }
@@ -411,7 +417,9 @@ and simplestr = parse
   | dquote quote                 { str := !str^"\'"; simplestr lexbuf }
   | quote dquote                 { str := !str^"\""; simplestr lexbuf }
   | quote quote                  { str := !str^"\'"; simplestr lexbuf }
-  | dquote                       { raise (Err_str "Error : Heterogeneous string detected, starting with \' and ending with \" ") }
+  | dquote                       { let msg = "Heterogeneous string, starting with \' and ending with \" only allowed in scilab 5" in
+                                   warning_only_scila5 msg lexbuf;
+                                   return_token (STR !str) }
   | next newline                 { newline_lex lexbuf; simplestr lexbuf }
   | newline                      { raise (Err_str "Error : unexpected newline in a string ") }
   | eof                          { raise (Err_str "Error : unexpected end of file in a string ") }
