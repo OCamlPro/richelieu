@@ -144,8 +144,8 @@ let utf4 = utf41 | utf42 | utf43
 
 let utf  =  utf2 | utf3 | utf4
 
-let id1  = ['a'-'z''A'-'Z''_''%''#''?''$'] | utf
-let id2  = ['a'-'z''A'-'Z''_''0'-'9''#''?''$'] | utf
+let id1  = ['a'-'z''A'-'Z''_''%''#''?''$''!'] | utf
+let id2  = ['a'-'z''A'-'Z''_''0'-'9''#''?''$''!'] | utf
 let id   = id1 id2*
 (* let id   = ['a'-'z''A'-'Z''_''%''#''?''$']['a'-'z''A'-'Z''_''0'-'9''#''?''$'] * *)
 
@@ -290,6 +290,9 @@ rule token = parse
   | "hidden"                     { if not (in_matrix ())
                                    then return_token HIDDEN
                                    else return_token (ID ("hidden")) }
+  | "deff"                       { if not (in_matrix ())
+                                   then return_token DEFF
+                                   else return_token (ID ("deff")) }
   | "function"                   { if not (in_matrix ())
                                    then return_token FUNCTION
                                    else return_token (ID ("function")) }

@@ -40,7 +40,7 @@
 %token DOTLDIVIDE DOTRDIVIDE DOTPOWER OR OROR KRONTIMES CONTROLTIMES
 %token CONTROLLDIVIDE CONTROLRDIVIDE LINEBREAK KRONLDIVIDE KRONRDIVIDE
 
-%token WIERDOP
+%token WIERDOP DEFF
 %token<float> VARINT
 %token<float> VARFLOAT
 %token<float> NUM
@@ -2200,14 +2200,22 @@ forBody :
 
 /* WHILE */
 whileControl :
-| WHILE condition whileConditionBreak whileBody END   { let wexp =
-                                                          WhileExp
-                                                            { whileExp_test = $2;
-                                                              whileExp_body = $4 } in
-                                                        let off_st = Parsing.rhs_start_pos 1 in
-                                                        let off_end = Parsing.rhs_end_pos 5 in
-                                                        let loc = create_loc off_st off_end in
-                                                        create_exp loc (ControlExp wexp) }
+| WHILE condition whileConditionBreak whileBody END                   { let wexp =
+                                                                          WhileExp
+                                                                            { whileExp_test = $2;
+                                                                              whileExp_body = $4 } in
+                                                                        let off_st = Parsing.rhs_start_pos 1 in
+                                                                        let off_end = Parsing.rhs_end_pos 5 in
+                                                                        let loc = create_loc off_st off_end in
+                                                                        create_exp loc (ControlExp wexp) }
+| WHILE condition whileConditionBreak whileBody elseTok whileBody END { let wexp =
+                                                                          WhileExp
+                                                                            { whileExp_test = $2;
+                                                                              whileExp_body = $4 } in
+                                                                        let off_st = Parsing.rhs_start_pos 1 in
+                                                                        let off_end = Parsing.rhs_end_pos 5 in
+                                                                        let loc = create_loc off_st off_end in
+                                                                        create_exp loc (ControlExp wexp) }
 
 whileBody :
 | /* Empty */           { let off_st = Parsing.rhs_start_pos 1 in
