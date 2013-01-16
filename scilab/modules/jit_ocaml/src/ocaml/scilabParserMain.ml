@@ -11,6 +11,12 @@ let usage = "Usage: ./main -t [fichier]  (stdin par default)"
 
 let list_ext = [".sci"; ".sce"; ".tst"; (* ".dia.ref" *)]
 
+let scilab5_modules_path = "/home/michael/scilab.5/scilab-5.4.0/modules/"
+
+let scilab6_test_path = "/home/michael/scilab.6/scilab/test/"
+
+let richelieu_test_path = "/home/michael/dev_sci/richelieu/"
+
 let print_exn_infos =
   Printf.printf "Error at token : %s (line %i, character %i) \n\n"
 
@@ -74,157 +80,197 @@ let _ =
       let dir_tests =
         [ (* My tests *)
           "test/";
-         
-         (* Scilab 5' tests *)
-          "/home/michael/scilab.5/scilab-5.4.0/modules/action_binding/tests/nonreg_tests";
           
-          "/home/michael/scilab.5/scilab-5.4.0/modules/api_scilab/tests/unit_tests";
-          "/home/michael/scilab.5/scilab-5.4.0/modules/api_scilab/tests/nonreg_tests";
+          (* Scilab 5' tests *)
+          (* scilab5_modules_path ^ "action_binding/tests/nonreg_tests"; *)
           
-           "/home/michael/scilab.5/scilab-5.4.0/modules/arnoldi/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/arnoldi/tests/nonreg_tests";
+          (* scilab5_modules_path ^ "api_scilab/tests/unit_tests"; *)
+          (* scilab5_modules_path ^ "api_scilab/tests/nonreg_tests"; *)
+          
+          (*  scilab5_modules_path ^ "arnoldi/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "arnoldi/tests/nonreg_tests"; *)
            
-           "/home/michael/scilab.5/scilab-5.4.0/modules/atoms/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/atoms/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "atoms/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "atoms/tests/nonreg_tests"; *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/boolean/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/boolean/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "boolean/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "boolean/tests/nonreg_tests"; *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/cacsd/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/cacsd/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "cacsd/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "cacsd/tests/nonreg_tests"; *)
 
-           (* C code ?! *)
-           (* "/home/michael/scilab.5/scilab-5.4.0/modules/call_scilab/tests/nonreg_tests"; *)
+          (*  (\* C code ?! *\) *)
+          (*  (\* scilab5_modules_path ^ "call_scilab/tests/nonreg_tests"; *\) *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/compatibility_functions/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/compatibility_functions/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "compatibility_functions/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "compatibility_functions/tests/nonreg_tests"; *)
            
-           "/home/michael/scilab.5/scilab-5.4.0/modules/completion/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/completion/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "completion/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "completion/tests/nonreg_tests"; *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/console/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/console/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "console/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "console/tests/nonreg_tests"; *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/core/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/core/tests/nonreg_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/core/tests/benchmarks";
+          (*  scilab5_modules_path ^ "core/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "core/tests/nonreg_tests"; *)
+          (*  scilab5_modules_path ^ "core/tests/benchmarks"; *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/data_structures/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/data_structures/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "data_structures/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "data_structures/tests/nonreg_tests"; *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/demo_tools/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/demo_tools/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "demo_tools/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "demo_tools/tests/nonreg_tests"; *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/development_tools/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/development_tools/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "development_tools/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "development_tools/tests/nonreg_tests"; *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/differential_equations/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/differential_equations/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "differential_equations/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "differential_equations/tests/nonreg_tests"; *)
            
-           "/home/michael/scilab.5/scilab-5.4.0/modules/dynamic_link/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/dynamic_link/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "dynamic_link/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "dynamic_link/tests/nonreg_tests"; *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/elementary_functions/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/elementary_functions/tests/nonreg_tests";  
+          (*  scilab5_modules_path ^ "elementary_functions/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "elementary_functions/tests/nonreg_tests";   *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/fftw/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/fftw/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "fftw/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "fftw/tests/nonreg_tests"; *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/fileio/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/fileio/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "fileio/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "fileio/tests/nonreg_tests"; *)
            
-           "/home/michael/scilab.5/scilab-5.4.0/modules/functions/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/functions/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "functions/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "functions/tests/nonreg_tests"; *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/genetic_algorithms/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/genetic_algorithms/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "genetic_algorithms/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "genetic_algorithms/tests/nonreg_tests"; *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/graphic_export/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/graphic_export/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "graphic_export/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "graphic_export/tests/nonreg_tests"; *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/graphic_objects/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/graphic_objects/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "graphic_objects/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "graphic_objects/tests/nonreg_tests"; *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/graphics/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/graphics/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "graphics/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "graphics/tests/nonreg_tests"; *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/gui/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/gui/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "gui/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "gui/tests/nonreg_tests"; *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/hdf5/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/hdf5/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "hdf5/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "hdf5/tests/nonreg_tests"; *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/helptools/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/helptools/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "helptools/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "helptools/tests/nonreg_tests"; *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/history_manager/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/history_manager/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "history_manager/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "history_manager/tests/nonreg_tests"; *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/integer/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/integer/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "integer/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "integer/tests/nonreg_tests"; *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/interpolation/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/interpolation/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "interpolation/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "interpolation/tests/nonreg_tests"; *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/io/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/io/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "io/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "io/tests/nonreg_tests"; *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/jvm/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/jvm/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "jvm/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "jvm/tests/nonreg_tests"; *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/linear_algebra/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/linear_algebra/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "linear_algebra/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "linear_algebra/tests/nonreg_tests"; *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/localization/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/localization/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "localization/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "localization/tests/nonreg_tests"; *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/m2sci/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/m2sci/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "m2sci/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "m2sci/tests/nonreg_tests"; *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/matio/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/matio/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "matio/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "matio/tests/nonreg_tests"; *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/optimization/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/optimization/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "optimization/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "optimization/tests/nonreg_tests"; *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/output_stream/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/output_stream/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "output_stream/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "output_stream/tests/nonreg_tests"; *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/overloading/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/overloading/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "overloading/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "overloading/tests/nonreg_tests"; *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/parallel/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/parallel/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "parallel/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "parallel/tests/nonreg_tests"; *)
 
-           "/home/michael/scilab.5/scilab-5.4.0/modules/parameters/tests/unit_tests";
-           "/home/michael/scilab.5/scilab-5.4.0/modules/parameters/tests/nonreg_tests";
+          (*  scilab5_modules_path ^ "parameters/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "parameters/tests/nonreg_tests"; *)
 
-(*            
-operations/     preferences/          sound/              tclsci/
-optimization/   randlib/              sparse/             threads/
-output_stream/  renderer/             special_functions/  time/
-overloading/    scicos/               spreadsheet/        types/
-parallel/       scicos_blocks/        statistics/         ui_data/
-parameters/     scinotes/             string/             umfpack/
-parse/          scipad/               symbol/             windows_tools/
-polynomials/    signal_processing/    symbolic/           xcos/
-prebuildjava/   simulated_annealing/  system_env/         xml/
-*)
+          (*  scilab5_modules_path ^ "polynomials/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "polynomials/tests/nonreg_tests"; *)
+
+          (*  scilab5_modules_path ^ "randlib/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "randlib/tests/nonreg_tests"; *)
+
+          (*  scilab5_modules_path ^ "scicos_blocks/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "scicos_blocks/tests/nonreg_tests"; *)
+
+          (*  scilab5_modules_path ^ "scinotes/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "scinotes/tests/nonreg_tests"; *)
+
+          (*  scilab5_modules_path ^ "signal_processing/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "signal_processing/tests/nonreg_tests"; *)
+
+          (*  scilab5_modules_path ^ "sound/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "sound/tests/nonreg_tests"; *)
+
+          (*  scilab5_modules_path ^ "sparse/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "sparse/tests/nonreg_tests"; *)
+
+          (*  scilab5_modules_path ^ "special_functions/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "special_functions/tests/nonreg_tests"; *)
+
+          (*  scilab5_modules_path ^ "spreadsheet/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "spreadsheet/tests/nonreg_tests"; *)
+
+          (*  scilab5_modules_path ^ "statistics/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "statistics/tests/nonreg_tests"; *)
+
+          (*  scilab5_modules_path ^ "string/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "string/tests/nonreg_tests"; *)
+
+          (*  scilab5_modules_path ^ "tclsci/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "tclsci/tests/nonreg_tests"; *)
+
+          (*  scilab5_modules_path ^ "time/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "time/tests/nonreg_tests"; *)
+
+
+          (*  scilab5_modules_path ^ "ui_data/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "ui_data/tests/nonreg_tests"; *)
+
+          (*  scilab5_modules_path ^ "umfpack/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "umfpack/tests/nonreg_tests"; *)
+
+          (*  scilab5_modules_path ^ "windows_tools/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "windows_tools/tests/nonreg_tests"; *)
+
+          (*  scilab5_modules_path ^ "xml/tests/unit_tests"; *)
+          (*  scilab5_modules_path ^ "xml/tests/nonreg_tests"; *)
           
 
          (* Scilab 6' tests *)
-         (* "../../test/good/"; *)
-         (* "../../test/control/"; *)
-         (* "../../test/exec/OpExp/"; *)
-         (* "../../test/goodDelayed/"; *)
-         (* "../../test/syntax/"; *)
-         (* "../../test/bad/"; *)
+           scilab6_test_path ^ "good/";
+           (* scilab6_test_path ^ "/control/"; *)
+           (* scilab6_test_path ^ "/exec/OpExp/"; *)
+           (* scilab6_test_path ^ "/goodDelayed/"; *)
+           (* scilab6_test_path ^ "/syntax/"; *)
+           (* scilab6_test_path ^ "/bad/"; *)
           
-         (* Richelieu' tests *)
-         "/home/michael/dev_sci/richelieu/code_samples/declarations/";
-         "/home/michael/dev_sci/richelieu/code_samples/scoping/";
-         "/home/michael/dev_sci/richelieu/code_samples/slow_code/";
-         "/home/michael/dev_sci/richelieu/code_samples/trick/";
+           (* Richelieu' tests *)
+           richelieu_test_path ^ "code_samples/declarations/";
+           richelieu_test_path ^ "code_samples/scoping/";
+           richelieu_test_path ^ "code_samples/slow_code/";
+           richelieu_test_path ^ "code_samples/trick/";
          ] in
       List.iter (run_tests) dir_tests
     end

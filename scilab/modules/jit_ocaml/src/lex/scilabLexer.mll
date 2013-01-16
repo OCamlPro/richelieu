@@ -321,7 +321,7 @@ rule token = parse
   (* | lb newline spaces* ldivide   { return_token LDIVIDE } *)
   (* | lb newline spaces* rdivide   { return_token RDIVIDE } *)
     (* We need those for 'op1 linebreak operator op2' cases *)
-  (* | lb startlinecomment          { discardcomment lexbuf } *)
+  | lb startlinecomment          { discardcomment lexbuf }
   | next                         { return_token LINEBREAK }
   | plus                         { return_token PLUS }
   | minus                        { return_token MINUS }
