@@ -2213,9 +2213,14 @@ whileControl :
                                                                             { whileExp_test = $2;
                                                                               whileExp_body = $4 } in
                                                                         let off_st = Parsing.rhs_start_pos 1 in
-                                                                        let off_end = Parsing.rhs_end_pos 5 in
+                                                                        let off_end = Parsing.rhs_end_pos 7 in
                                                                         let loc = create_loc off_st off_end in
-                                                                        create_exp loc (ControlExp wexp) }
+                                                                        let controlexp = create_exp loc (ControlExp wexp) in
+                                                                        let seqexp = SeqExp [controlexp;$6] in
+                                                                        let off_st = Parsing.rhs_start_pos 1 in
+                                                                        let off_end = Parsing.rhs_end_pos 7 in
+                                                                        let loc = create_loc off_st off_end in
+                                                                        create_exp loc seqexp }
 
 whileBody :
 | /* Empty */           { let off_st = Parsing.rhs_start_pos 1 in
