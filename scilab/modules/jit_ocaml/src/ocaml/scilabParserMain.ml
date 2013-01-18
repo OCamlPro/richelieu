@@ -24,10 +24,14 @@ let print_lex_infos =
   Printf.printf "at token : %s (line %i, character %i) \n\n"
 
 let run_test file =
-  (* let regexp = Str.regexp ".*bug.*.tst" in *)
   let ch = if file = "" then stdin else open_in file in
+  (* Printf.printf "Pre-parsing %s : \n" file; *)
+  let new_prog = ScilabPreParser.pre_parse ch in
+  (* Printf.printf "%s \n" new_prog; *)
+  (* Printf.printf "==================\n"; *)
   Printf.printf "Testing %s : " file;
-  let lexbuf = Lexing.from_channel ch in
+  (* let lexbuf = Lexing.from_channel ch in *)
+  let lexbuf = Lexing.from_string new_prog in
   ScilabLexer.init_lexer_var ();
   try
     let ast = ScilabParser.program ScilabLexer.token lexbuf in
@@ -36,7 +40,7 @@ let run_test file =
         | ScilabAst.Exp exp -> 
             (* print_endline (ScilabAstPrinter.to_string exp); *)
             (* let n = !ScilabAstStats.node_visited in *)
-            ScilabAstStats.analyze_ast exp;
+            (* ScilabAstStats.analyze_ast exp; *)
             (* ScilabAstStats.print_stats(); *)
             (* let curr = lexbuf.Lexing.lex_curr_p in *)
             (* Printf.printf "node = %i; ligne = %i; rapport = %f" (!ScilabAstStats.node_visited - n) curr.Lexing.pos_lnum ((float (!ScilabAstStats.node_visited - n))/.(float curr.Lexing.pos_lnum)); *)
@@ -267,11 +271,11 @@ let _ =
 
          (* Scilab 6' tests *)
            scilab6_test_path ^ "good/";
-           (* scilab6_test_path ^ "/control/"; *)
-           (* scilab6_test_path ^ "/exec/OpExp/"; *)
-           (* scilab6_test_path ^ "/goodDelayed/"; *)
-           (* scilab6_test_path ^ "/syntax/"; *)
-           (* scilab6_test_path ^ "/bad/"; *)
+           (* scilab6_test_path ^ "control/"; *)
+           (* scilab6_test_path ^ "exec/OpExp/"; *)
+           (* scilab6_test_path ^ "goodDelayed/"; *)
+           (* scilab6_test_path ^ "syntax/"; *)
+           (* scilab6_test_path ^ "bad/"; *)
           
            (* Richelieu' tests *)
            richelieu_test_path ^ "code_samples/declarations/";
