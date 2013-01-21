@@ -219,7 +219,7 @@ let wierd_op_version5 = "`--"
 
 let lb = next spaces*
 
-let shellmode_arg = [^ ' ''\t''\r''\n'','';''\'''\"' '(' '=' '/' '+'][^ '\t''\r''\n'','';''\'''\"'' ']*
+let shellmode_arg = [^ ' ''\t''\r''\n'','';''\'''\"' '(' '=' '/' '+' '|' '&'][^ '\t''\r''\n'','';''\'''\"'' ']*
 
 let assign = "="
 
@@ -394,15 +394,16 @@ and comment = parse
 
 and commentblock = parse
   | endblockcomment              { return_token (COMMENT !str_cmt) }
+  | newline                      { newline_lex lexbuf; str_cmt := !str_cmt^(String.make 1 '\n'); commentblock lexbuf }
   | eof                          { return_token (COMMENT !str_cmt) }
-  | _ as c                       { str_cmt := !str_cmt^(String.make 1 c); comment lexbuf }
+  | _ as c                       { str_cmt := !str_cmt^(String.make 1 c); commentblock lexbuf }
 
 and doublestr = parse
   | dquote                       { return_token (STR !str) }
-  | dquote dquote                { str := !str^"\""; doublestr lexbuf }
-  | dquote quote                 { str := !str^"\'"; doublestr lexbuf }
-  | quote dquote                 { str := !str^"\""; doublestr lexbuf }
-  | quote quote                  { str := !str^"\'"; doublestr lexbuf }
+  | dquote dquote                { str := !str^"\"\""; doublestr lexbuf }
+  | dquote quote                 { str := !str^"\"\'"; doublestr lexbuf }
+  | quote dquote                 { str := !str^"\'\""; doublestr lexbuf }
+  | quote quote                  { str := !str^"\'\'"; doublestr lexbuf }
   | quote                        { let msg = "Heterogeneous string, starting with \" and ending with \' only allowed in scilab 5" in
                                    warning_only_scila5 msg lexbuf;
                                    return_token (STR !str) }
@@ -413,10 +414,10 @@ and doublestr = parse
 
 and simplestr = parse
   | quote                        { return_token (STR !str)}
-  | dquote dquote                { str := !str^"\""; simplestr lexbuf }
-  | dquote quote                 { str := !str^"\'"; simplestr lexbuf }
-  | quote dquote                 { str := !str^"\""; simplestr lexbuf }
-  | quote quote                  { str := !str^"\'"; simplestr lexbuf }
+  | dquote dquote                { str := !str^"\"\""; simplestr lexbuf }
+  | dquote quote                 { str := !str^"\"\'"; simplestr lexbuf }
+  | quote dquote                 { str := !str^"\'\""; simplestr lexbuf }
+  | quote quote                  { str := !str^"\'\'"; simplestr lexbuf }
   | dquote                       { let msg = "Heterogeneous string, starting with \' and ending with \" only allowed in scilab 5" in
                                    warning_only_scila5 msg lexbuf;
                                    return_token (STR !str) }
@@ -459,6 +460,10 @@ and shellmode = parse
   | lowerthan                    { return_shell LT }
   | greaterthan                  { return_shell GT }
   | boolnot                      { return_shell NOT }
+  | booland                      { return_shell AND }
+  | boolandand                   { return_shell ANDAND }
+  | boolor                       { return_shell OR }
+  | booloror                     { return_shell OROR }
   | quote                        { shellmode_on := false; 
                                    if (is_transposable ())
                                    then return_shell QUOTE 
