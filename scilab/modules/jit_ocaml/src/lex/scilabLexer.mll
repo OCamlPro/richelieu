@@ -54,7 +54,7 @@
 
   let is_transposable () = match !last_token with
     | ID _ | RBRACK | RBRACE | VARINT _ | VARFLOAT _
-    | RPAREN | NUM _ | BOOLTRUE | BOOLFALSE -> true
+    | RPAREN | NUM _ | BOOLTRUE | BOOLFALSE | QUOTE -> true
     | _ -> false
 
   let is_EOL () = match !last_token with
