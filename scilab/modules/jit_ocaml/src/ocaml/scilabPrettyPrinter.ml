@@ -1,7 +1,8 @@
 open ScilabAst
 open Format
       
-
+let is_block_comment str =
+  String.contains str '\n'
    
 let pprint_constexp buf indent constexp = match constexp with
   | BoolExp boolexp -> 
@@ -9,7 +10,10 @@ let pprint_constexp buf indent constexp = match constexp with
       then Printf.bprintf buf "%s%%t" indent
       else Printf.bprintf buf "%s%%f" indent
   | CommentExp commentexp -> 
-      Printf.bprintf buf "%s/* %s */" indent commentexp.commentExp_comment
+      let cmt = commentexp.commentExp_comment in
+      if is_block_comment cmt
+      then Printf.bprintf buf "%s/* %s */" indent cmt
+      else Printf.bprintf buf "%s// %s \n" indent cmt
   | DoubleExp doubleexp -> 
       Printf.bprintf buf "%s%f" indent doubleexp.doubleExp_value
   | FloatExp floatexp -> 
@@ -98,7 +102,7 @@ and pprint_controlexp buf indent controlexp = match controlexp with
           | None -> 
               Printf.bprintf buf "%sif " indent;
               pprint_exp buf "" ifexp.ifExp_test;
-              Printf.bprintf buf "%sthen\n" indent;
+              Printf.bprintf buf " then\n";
               pprint_exp buf (indent ^ "  ") ifexp.ifExp_then;
               Printf.bprintf buf "\n%send" indent
       end
