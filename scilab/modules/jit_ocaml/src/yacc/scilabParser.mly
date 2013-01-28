@@ -100,7 +100,7 @@ expressions :
                                                  let off_end = Parsing.rhs_end_pos 1 in
                                                  let loc = create_loc off_st off_end in
                                                  create_exp loc seqexp }
-| recursiveExpression expression               { let seqexp = SeqExp (List.rev ($2::$1)) in
+| recursiveExpression expression               { let seqexp = SeqExp (List.rev (List.append (match $2.exp_desc with SeqExp l -> l | _ -> [$2]) $1)) in
                                                  let off_st = Parsing.rhs_start_pos 1 in
                                                  let off_end = Parsing.rhs_end_pos 2 in
                                                  let loc = create_loc off_st off_end in
@@ -110,12 +110,12 @@ expressions :
                                                  let cmt_end = Parsing.rhs_end_pos 3 in
                                                  let cmt_loc = create_loc cmt_st cmt_end in
                                                  let cmt_exp = create_exp cmt_loc (ConstExp commentexp) in
-                                                 let seqexp = SeqExp (List.rev (List.append ($2::$1) [cmt_exp])) in
+                                                 let seqexp = SeqExp (List.rev (List.append (List.append (match $2.exp_desc with SeqExp l -> l | _ -> [$2]) $1) [cmt_exp])) in
                                                  let off_st = Parsing.rhs_start_pos 1 in
                                                  let off_end = Parsing.rhs_end_pos 2 in
                                                  let loc = create_loc off_st off_end in
                                                  create_exp loc seqexp }
-| expression                                   { let seqexp = SeqExp [$1] in
+| expression                                   { let seqexp = SeqExp (match $1.exp_desc with SeqExp l -> l | _ -> [$1]) in
                                                  let off_st = Parsing.rhs_start_pos 1 in
                                                  let off_end = Parsing.rhs_end_pos 1 in
                                                  let loc = create_loc off_st off_end in
@@ -125,27 +125,28 @@ expressions :
                                                  let cmt_end = Parsing.rhs_end_pos 2 in
                                                  let cmt_loc = create_loc cmt_st cmt_end in
                                                  let cmt_exp = create_exp cmt_loc (ConstExp commentexp) in
-                                                 let seqexp = SeqExp ($1::[cmt_exp]) in
+                                                 let seqexp = SeqExp (
+                                                   List.append (match $1.exp_desc with SeqExp l -> l | _ -> [$1]) [cmt_exp]) in
                                                  let off_st = Parsing.rhs_start_pos 1 in
                                                  let off_end = Parsing.rhs_end_pos 2 in
                                                  let loc = create_loc off_st off_end in
                                                  create_exp loc seqexp }
 
 recursiveExpression :
-| recursiveExpression expression expressionLineBreak         { $2::$1 }
+| recursiveExpression expression expressionLineBreak         { List.append (match $2.exp_desc with SeqExp l -> l | _ -> [$2]) $1 }
 | recursiveExpression expression COMMENT expressionLineBreak { let commentexp = CommentExp { commentExp_comment = $3 } in
                                                                let cmt_st = Parsing.rhs_start_pos 3 in
                                                                let cmt_end = Parsing.rhs_end_pos 3 in
                                                                let cmt_loc = create_loc cmt_st cmt_end in
                                                                let cmt_exp = create_exp cmt_loc (ConstExp commentexp) in
-                                                               cmt_exp::$2::$1 }
+                                                               cmt_exp::(List.append (match $2.exp_desc with SeqExp l -> l | _ -> [$2]) $1) }
 | expression COMMENT expressionLineBreak                     { let commentexp = CommentExp { commentExp_comment = $2 } in
                                                                let cmt_st = Parsing.rhs_start_pos 2 in
                                                                let cmt_end = Parsing.rhs_end_pos 2 in
                                                                let cmt_loc = create_loc cmt_st cmt_end in
                                                                let cmt_exp = create_exp cmt_loc (ConstExp commentexp) in
-                                                               cmt_exp::[$1] }
-| expression expressionLineBreak                             { [$1] }
+                                                               cmt_exp::(match $1.exp_desc with SeqExp l -> l | _ -> [$1]) }
+| expression expressionLineBreak                             { match $1.exp_desc with SeqExp l -> l | _ -> [$1] }
 
 expressionLineBreak :
 | SEMI                                        { }
@@ -1846,14 +1847,14 @@ variable :
 | comparison                                    { $1 }
 | variable LPAREN functionArgs RPAREN           { let callexp = 
                                                     { callExp_name = $1;
-                                                      callExp_args = Array.of_list $3} in
+                                                      callExp_args = Array.of_list (List.rev $3)} in
                                                   let fcall_st = Parsing.rhs_start_pos 1 in
                                                   let fcall_end = Parsing.rhs_end_pos 4 in
                                                   let loc = create_loc fcall_st fcall_end in
                                                   create_exp loc (CallExp callexp) }
 | functionCall LPAREN functionArgs RPAREN       { let callexp = 
                                                     { callExp_name = $1;
-                                                      callExp_args = Array.of_list $3} in
+                                                      callExp_args = Array.of_list (List.rev $3)} in
                                                   let fcall_st = Parsing.rhs_start_pos 1 in
                                                   let fcall_end = Parsing.rhs_end_pos 4 in
                                                   let loc = create_loc fcall_st fcall_end in
@@ -2210,27 +2211,32 @@ forBody :
 
 /* WHILE */
 whileControl :
-| WHILE condition whileConditionBreak whileBody END                   { let wexp =
-                                                                          WhileExp
-                                                                            { whileExp_test = $2;
-                                                                              whileExp_body = $4 } in
-                                                                        let off_st = Parsing.rhs_start_pos 1 in
-                                                                        let off_end = Parsing.rhs_end_pos 5 in
-                                                                        let loc = create_loc off_st off_end in
-                                                                        create_exp loc (ControlExp wexp) }
-| WHILE condition whileConditionBreak whileBody elseTok whileBody END { let wexp =
-                                                                          WhileExp
-                                                                            { whileExp_test = $2;
-                                                                              whileExp_body = $4 } in
-                                                                        let off_st = Parsing.rhs_start_pos 1 in
-                                                                        let off_end = Parsing.rhs_end_pos 7 in
-                                                                        let loc = create_loc off_st off_end in
-                                                                        let controlexp = create_exp loc (ControlExp wexp) in
-                                                                        let seqexp = SeqExp [controlexp;$6] in
-                                                                        let off_st = Parsing.rhs_start_pos 1 in
-                                                                        let off_end = Parsing.rhs_end_pos 7 in
-                                                                        let loc = create_loc off_st off_end in
-                                                                        create_exp loc seqexp }
+| WHILE condition whileConditionBreak whileBody END                       { let wexp =
+                                                                              WhileExp
+                                                                                { whileExp_test = $2;
+                                                                                  whileExp_body = $4 } in
+                                                                            let off_st = Parsing.rhs_start_pos 1 in
+                                                                            let off_end = Parsing.rhs_end_pos 7 in
+                                                                            let loc = create_loc off_st off_end in
+                                                                            let controlexp = create_exp loc (ControlExp wexp) in
+                                                                            let seqexp = SeqExp (controlexp::[]) in
+                                                                            let off_st = Parsing.rhs_start_pos 1 in
+                                                                            let off_end = Parsing.rhs_end_pos 5 in
+                                                                            let loc = create_loc off_st off_end in
+                                                                            create_exp loc seqexp }
+| WHILE condition whileConditionBreak whileBody elseTok elseWhileBody END { let wexp =
+                                                                              WhileExp
+                                                                                { whileExp_test = $2;
+                                                                                  whileExp_body = $4 } in
+                                                                            let off_st = Parsing.rhs_start_pos 1 in
+                                                                            let off_end = Parsing.rhs_end_pos 7 in
+                                                                            let loc = create_loc off_st off_end in
+                                                                            let controlexp = create_exp loc (ControlExp wexp) in
+                                                                            let seqexp = SeqExp (controlexp::$6) in
+                                                                            let off_st = Parsing.rhs_start_pos 1 in
+                                                                            let off_end = Parsing.rhs_end_pos 7 in
+                                                                            let loc = create_loc off_st off_end in
+                                                                            create_exp loc seqexp }
 
 whileBody :
 | /* Empty */           { let off_st = Parsing.rhs_start_pos 1 in
@@ -2239,6 +2245,10 @@ whileBody :
                             create_loc off_st off_end in
                           create_exp loc (SeqExp []) }
 | expressions           { $1 }
+
+elseWhileBody :
+| /* Empty */           { [] }
+| expressions           { match $1.exp_desc with | SeqExp l -> l | _ -> [] }
 
 whileConditionBreak :
 | COMMA                 { }

@@ -351,13 +351,16 @@ rule token = parse
                                    return_token SEMI }
   | colon                        { return_token COLON }
   | integer as inum              { let num = float_of_string inum in
-                                   (* Printf.printf "varint[%f]" num; *)
+                                   (* Printf.printf "varint[%f]\n" num; *)
                                    return_token (VARINT num) }
   | number as nnum               { let num = float_of_string nnum in
+                                   (* Printf.printf "num[%s = %.15f]\n" nnum num; *)
                                    return_token (NUM num) }
   | little as lnum               { let num = float_of_string lnum in
+                                   (* Printf.printf "little[%f]\n" num; *)
                                    return_token (NUM num) }
-  | floating as float            { let f =(float_of_string (convert_scientific_notation float)) in
+  | floating as float            { let f = (float_of_string (convert_scientific_notation float)) in
+                                   (* Printf.printf "float[%s = %f]\n" float f; *)
                                    NUM f }
   | lparen                       { if !shellmode_on then shellmode_on := false; return_token LPAREN }
   | rparen                       { return_token RPAREN }
