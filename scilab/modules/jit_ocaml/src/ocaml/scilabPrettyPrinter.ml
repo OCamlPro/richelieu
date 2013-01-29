@@ -15,9 +15,14 @@ let pprint_constexp buf indent constexp = match constexp with
       then Printf.bprintf buf "%s/* %s */" indent cmt
       else Printf.bprintf buf "%s// %s \n" indent cmt
   | DoubleExp doubleexp -> 
-      Printf.bprintf buf "%s%f" indent doubleexp.doubleExp_value
+      if doubleexp.doubleExp_value = infinity
+      then
+        (* Hack for infinity, put a dumb high enough value *)
+        Printf.bprintf buf "%s%s" indent "1E+310"
+      else
+        Printf.bprintf buf "%s%s" indent (string_of_float doubleexp.doubleExp_value)
   | FloatExp floatexp -> 
-      Printf.bprintf buf "%s%f" indent floatexp.floatExp_value
+      Printf.bprintf buf "%s%s" indent (string_of_float floatexp.floatExp_value)
   | IntExp intexp -> 
       Printf.bprintf buf "%s%s" indent (Int32.to_string intexp.intExp_value)
   | NilExp -> 
@@ -56,11 +61,13 @@ let rec pprint_exp buf indent ast = match ast.exp_desc with
       Printf.bprintf buf ".";
       pprint_exp buf "" fieldexp.fieldExp_tail
   | ListExp listexp -> 
-      pprint_exp buf indent listexp.listExp_start;
+      Printf.bprintf buf "%s(" indent;
+      pprint_exp buf "" listexp.listExp_start;
       Printf.bprintf buf ":";
       pprint_exp buf "" listexp.listExp_step;
       Printf.bprintf buf ":";
-      pprint_exp buf "" listexp.listExp_end
+      pprint_exp buf "" listexp.listExp_end;
+      Printf.bprintf buf ")";
   | MathExp mathexp ->  pprint_mathexp buf indent mathexp
   | Var var -> pprint_var buf indent var
   | SeqExp seqexp -> pprint_list buf indent seqexp
@@ -281,17 +288,20 @@ and pprint_mathexp buf indent mathexp = match mathexp with
       pprint_lines buf (indent ^ " ") matrixexp.matrixExp_lines;
       Printf.bprintf buf "}"
   | NotExp notexp -> 
-      Printf.bprintf buf "%s~" indent;
-      pprint_exp buf "" notexp.notExp_exp
+      Printf.bprintf buf "%s~(" indent;
+      pprint_exp buf "" notexp.notExp_exp;
+      Printf.bprintf buf ")"
   | OpExp (oper, args) -> 
       (* *)
       Printf.bprintf buf "%s(" indent;
       pprint_opExpOp buf oper args.opExp_left args.opExp_right;
       Printf.bprintf buf ")"
   | LogicalOpExp (oper, args) -> 
-      pprint_exp buf indent args.opExp_left;
+      Printf.bprintf buf "%s(" indent;
+      pprint_exp buf "" args.opExp_left;
       pprint_logicalOpExpOp buf oper;
-      pprint_exp buf "" args.opExp_right
+      pprint_exp buf "" args.opExp_right;
+      Printf.bprintf buf ")"
   | TransposeExp transposeexp -> 
       match transposeexp.transposeExp_conjugate with
         | Conjugate -> 
@@ -312,14 +322,14 @@ and pprint_matrix_exp buf indent length i exp = match exp.exp_desc with
   | ConstExp (CommentExp commentexp) ->
       Printf.bprintf buf "// %s \n" commentexp.commentExp_comment
   | _ -> 
-      if i = length - 1
+      if i <> 0
       then
-        pprint_exp buf "" exp
-      else
         begin
-          pprint_exp buf "" exp;
-          Printf.bprintf buf ",\n%s" indent;
+          Printf.bprintf buf ", ";
+          pprint_exp buf "" exp
         end
+      else
+        pprint_exp buf "" exp
 
 
 and pprint_opExpOp buf oper left right = match oper with
