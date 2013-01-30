@@ -339,7 +339,6 @@ rule token = parse
   | krontimes                    { return_token KRONTIMES }
   | power                        { return_token POWER }
   | dotpower                     { return_token DOTPOWER }
-  | wierd_op_version5            { return_token WIERDOP }
   | equal                        { return_token EQ }
   | notequal                     { return_token NE }
   | lowerthan                    { return_token LT }
@@ -449,7 +448,6 @@ and shellmode = parse
   | krontimes                    { return_shell KRONTIMES }
   | power                        { return_shell POWER }
   | dotpower                     { return_shell DOTPOWER }
-  | wierd_op_version5            { return_shell WIERDOP }
   | equal                        { return_shell EQ }
   | notequal                     { return_shell NE }
   | lowerthan                    { return_shell LT }
