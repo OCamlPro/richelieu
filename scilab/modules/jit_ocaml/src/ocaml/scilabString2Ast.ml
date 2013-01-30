@@ -13,6 +13,8 @@
 open ScilabAst
 open ScilabContext
 
+type wstring = string
+
 let debug = false
 
 let get_uint8 s pos =
@@ -562,12 +564,14 @@ and get_vars s pos =
 
 let previous_one = ref None
 
-let copy_string s =
+let string_of_wstring s =
   let pos = 0 in
   let buflen, pos = get_uint32 s pos in
   let copy = String.create buflen in
   String.unsafe_blit s 0 copy 0 buflen;
   copy
+
+let wstring_of_string s = s
 
 let diff_strings s1 s2 =
   if s1 <> s2 then
@@ -580,7 +584,7 @@ let diff_strings s1 s2 =
       end
     done
 
-let ast_of_string s =
+let ast_of_wstring s =
   return_dummyExp := false;
   warning := None;
   let pos = 0 in
@@ -596,7 +600,7 @@ let ast_of_string s =
   end;
 
   if debug then begin
-    let s1 = copy_string s in
+    let s1 = string_of_wstring s in
     begin match !previous_one with
       None -> ()
     | Some (previous_ast, s2) ->

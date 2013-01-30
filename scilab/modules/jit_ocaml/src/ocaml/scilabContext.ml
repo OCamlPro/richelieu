@@ -323,11 +323,11 @@ let global ctx sy =
       b.binding_locals <- l0 :: b.binding_locals
 
 (* remove all local scopes, and keep only the global one *)
-let rec clear ctx =
+let rec clear_all_local_scopes ctx =
   match ctx.context_scopes with
     [ _ ] -> ()
   | [] -> assert false
-  | s :: _ -> end_scope ctx; clear ctx
+  | s :: _ -> end_scope ctx; clear_all_local_scopes ctx
 
 let to_string () =
 

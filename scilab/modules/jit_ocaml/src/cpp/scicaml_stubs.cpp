@@ -89,21 +89,28 @@ int scicaml_visit(const ast::Exp &e,
 		       Val_int(action), Val_int(expected));
   free(buf);
 
-  if( ret_v == Val_int(0) ){ // None => an error !
+  if( ret_v == Val_int(0) ){ // ReturnNotExec
     return 1;
   } else {
+    int tag = Tag_val( ret_v );
     ret_v = Field( ret_v, 0 );
-    int nresults = Wosize_val(ret_v);
-    
-    if( nresults == 1 ){
-      visitor->result_set( Scilab_val(Field(ret_v, 0) ) );
-    } else
-      if( nresults > 0 ){
-	for(int i=0; i<nresults; i++){
-	  visitor->result_set(i, Scilab_val(Field(ret_v, i) ) );
-	}
-      }  
+
+    if( tag == 0 ){
+      scilabErrorW(L"Error in interpreter");
+      throw ScilabMessage(e.location_get());
+    } else {
+      int nresults = Wosize_val(ret_v);
+      
+      if( nresults == 1 ){
+	visitor->result_set( Scilab_val(Field(ret_v, 0) ) );
+      } else
+	if( nresults > 0 ){
+	  for(int i=0; i<nresults; i++){
+	    visitor->result_set(i, Scilab_val(Field(ret_v, i) ) );
+	  }
+	}  
+      // if everything went right, we don't need to do anything
+      return 0;
+    }
   }
-  // 1 has return means that we want to execute the visitprivate()
-  return 1;
 }

@@ -298,12 +298,10 @@ external ocpsci_overload_getNameFromOper_ml :
 external ocpsci_equal_ml : t -> t -> bool =   "ocpsci_equal_c"
 external ocpsci_nequal_ml : t -> t -> bool =   "ocpsci_nequal_c"
 
-type wstring
-
 external ocpsci_free_wstring_ml :
-  wstring -> unit = "ocpsci_free_wstring_c"
+  ScilabString2Ast.wstring -> unit = "ocpsci_free_wstring_c"
 external ocpsci_parse_wstring_c :
-  string -> wstring = "ocpsci_parse_wstring_c"
+  string -> ScilabString2Ast.wstring = "ocpsci_parse_wstring_c"
 
 (*********************************************************************)
 (*                                                                   *)
@@ -545,8 +543,6 @@ let call t args opt_args iRetCount =
 
 let clone = ocpsci_clone_ml
 
-let to_string t = "<abstract>"
-
 let operation = ocpsci_operation_ml
 
 let refcount = ocpsci_refcount_ml
@@ -744,6 +740,10 @@ let sparsebool_set t row col b =
     RealSparseBool -> unsafe_sparsebool_set t row col b
   | _ -> type_error "sparsebool_set" t [RealSparseBool]
 
+
+let to_string t =
+  Printf.sprintf "<abstract:%s>" (string_of_realType (get_type t))
+
 let _ =
   Printexc.register_printer (function exn ->
     match exn with
@@ -755,6 +755,8 @@ let _ =
               name kind (String.concat "| " kinds))
     | _ -> None
 )
+
+let parse_wstring = ocpsci_parse_wstring_c
 
 (*********************************************************************)
 (*                                                                   *)

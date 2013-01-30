@@ -209,3 +209,5 @@ val sparsebool_get : t -> int -> int -> bool
 val sparsebool_set : t -> int -> int -> bool -> unit
 val unsafe_sparsebool_get : t -> int -> int -> bool
 val unsafe_sparsebool_set : t -> int -> int -> bool -> unit
+
+val parse_wstring : string -> ScilabString2Ast.wstring

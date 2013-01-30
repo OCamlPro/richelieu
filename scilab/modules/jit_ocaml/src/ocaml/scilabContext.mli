@@ -58,7 +58,7 @@ and context = {
 exception ErrorUndefinedVariable of string
 exception CannotResumeFromToplevelScope
 
-val clear : context -> unit
+val clear_all_local_scopes : context -> unit
 val symbol_name : symbol -> string
 val new_symbol : string -> symbol
 val getInstance : unit -> context
