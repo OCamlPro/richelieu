@@ -76,7 +76,7 @@ libscijit_ocaml_la_SOURCES = $(JIT_OCAML_CPP_SOURCES)
 
 noinst_LTLIBRARIES= libocpsci.la
 libocpsci_la_SOURCES= \
-    src/c/jit_ocaml.c \
+    src/cpp/scicaml_stubs.cpp \
     src/cpp/ocpsci_gw.cpp \
     src/cpp/ocpsci_stubs.cpp
 
@@ -150,7 +150,7 @@ CLEANFILES= \
 	$(OCAML_CMIS)  \
 	$(OCAML_CMXS)  \
 	$(OCAML_OBJS)  \
-	jit_ocaml.o \
+	scicaml_stubs.o \
 	ocaml_parser \
 	src/lex/*.cm* \
 	src/lex/*.o \

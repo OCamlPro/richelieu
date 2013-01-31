@@ -10,11 +10,7 @@
  *
  */
 
-#include "jit_ocaml.hxx"
-
-/* TODO: call the destructor of the C++ AST when it becomes useless */
-
-ast::Exp* ast_saved = NULL;
+#include "scicaml.hxx"
 
 #include <time.h>
 #include <string>
@@ -24,7 +20,6 @@ ast::Exp* ast_saved = NULL;
 #include <iostream>
 #include "location.hxx"
 
-#include "jit_ocaml.hxx"
 #include "visitor_common.hxx"
 //#include "runvisitor.hxx"
 //#include "execvisitor.hxx"
@@ -109,12 +104,14 @@ public:
     add_uint8(code);
     add_location(&e->location_get());
     add_uint8(e->is_verbose());
+    /*    
     add_uint8(e->is_break());
     add_uint8(e->is_breakable());
     add_uint8(e->is_return());
     add_uint8(e->is_returnable());
     add_uint8(e->is_continue());
     add_uint8(e->is_continuable());
+    */
   }
 
   /* ensure that we have [size] bytes in the buffer */
@@ -776,13 +773,12 @@ class SerializeVisitor : public SerializeVisitorT<SerializeVisitor>
 
 
 
-char* scicaml_ast2string(ast::Exp* ast)
+char* scicaml_ast2string(const ast::Exp* ast)
 {
   // std::cerr << "scicaml_ast2string" << std::endl;
 
   ast::SerializeVisitor visitor;
 
   ast->accept(visitor);
-  ast_saved = ast;
   return visitor.get_buf();
 }

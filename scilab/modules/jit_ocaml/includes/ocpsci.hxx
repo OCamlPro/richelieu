@@ -10,10 +10,18 @@
  *
  */
 
-#ifndef __JIT_OCAML_H__
-#define __JIT_OCAML_H__
+#ifndef __OCPSCI_HH__
+#define __OCPSCI_HH__
 
-extern char* jit_ocaml_analyze(char*);
+extern "C" {
+#define CAML_NAME_SPACE
+#include <caml/memory.h>
+#include <caml/fail.h>
+#include <caml/alloc.h>
+#include <caml/custom.h>
+#include <caml/callback.h>
+}
 
-#endif
+#define Scilab_val(v) (*((types::InternalType**) Data_custom_val(v)))
 
+#endif /* __OCPSCI_HH__ */

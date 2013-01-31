@@ -11,7 +11,7 @@
  */
 
 #include <stdlib.h>
-#include "jit_ocaml.hxx"
+#include "scicaml.hxx"
 
 #include <all.hxx>
 #include <commentexp.hxx>
@@ -254,13 +254,14 @@ static ast::Exp* get_exp(void)
   // std::cerr << "    code = " << code << std::endl;
   Location *loc = get_location();
   int is_verbose = get_bool();
+  /*
   int is_break = get_bool();
   int is_breakable = get_bool();
   int is_return = get_bool();
   int is_returnable = get_bool();
   int is_continue = get_bool();
   int is_continuable = get_bool();
-  
+  */  
   
   switch(code){
   case 1: {   
@@ -528,13 +529,14 @@ static ast::Exp* get_exp(void)
   }
 
   exp->set_verbose(is_verbose);
+  /*
   if(is_break) exp->break_set();
   if(is_breakable) exp->breakable_set();
   if(is_return) exp->return_set();
   if(is_returnable) exp->returnable_set();
   if(is_continue) exp->continue_set();
   if(is_continuable) exp->continuable_set();
-  
+*/  
   return exp;
 }
 

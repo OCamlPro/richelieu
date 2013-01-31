@@ -133,6 +133,7 @@ val add_int8 : int32 -> int32 -> int32
 val add_int16 : int32 -> int32 -> int32
 val add_int32 : int32 -> int32 -> int32
 
+val unsafe_set_bool : t -> int -> bool -> unit
 val unsafe_set_double : t -> int -> float -> unit
 val unsafe_set_int8 : t -> int -> int32 -> unit
 val unsafe_set_int16 : t -> int -> int32 -> unit
@@ -142,8 +143,8 @@ val set_double : t -> int -> float -> unit
 val set_int8 : t -> int -> int32 -> unit
 val set_int16 : t -> int -> int32 -> unit
 val set_int32 : t -> int -> int32 -> unit
+val set_bool : t -> int -> bool -> unit
 
-val unsafe_get_size : t -> int
 
 val empty_double : unit -> t
 
@@ -178,4 +179,33 @@ val extractFullMatrix : t -> t
 
 
 (* Only on Double, Bool, SparseBool *)
-val not_exp : t -> t
+(* val not_exp : t -> t *)
+
+val generic_get_rows : t -> int
+val generic_get_cols : t -> int
+val generic_get_size : t -> int
+val generic_get_dims : t -> int array
+
+val unsafe_get_rows : t -> int
+val unsafe_get_cols : t -> int
+val unsafe_get_size : t -> int
+val unsafe_get_dims : t -> int array
+
+val addElementToVariable : t option -> t -> int -> int -> t
+
+val overload_buildName0 : string -> string
+val overload_buildName1 : string -> t -> string
+val overload_buildName2 : string -> t -> t -> string
+val getShortTypeStr : t -> string
+val overload_getNameFromOper : binop -> string
+
+val new_bool : int array -> t
+
+val equal : t -> t -> bool
+val nequal : t -> t -> bool
+
+val map : t -> t
+val sparsebool_get : t -> int -> int -> bool
+val sparsebool_set : t -> int -> int -> bool -> unit
+val unsafe_sparsebool_get : t -> int -> int -> bool
+val unsafe_sparsebool_set : t -> int -> int -> bool -> unit

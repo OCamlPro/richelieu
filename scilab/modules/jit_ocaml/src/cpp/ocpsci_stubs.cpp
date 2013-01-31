@@ -10,14 +10,12 @@
  *
  */
 
-extern "C" {
-#include <caml/memory.h>
-#include <caml/fail.h>
-#include <caml/alloc.h>
-#include <caml/custom.h>
-#include <caml/callback.h>
+extern "C"
+{
+#include "stdarg.h"
+#include "localization.h"
+#include "os_swprintf.h"
 }
-
 #include "all.hxx"
 #include "float.hxx"
 #include "int.hxx"
@@ -32,6 +30,10 @@ extern "C" {
 #include "cell.hxx"
 #include "graphichandle.hxx"
 #include "sparse.hxx"
+#include "parser.hxx"
+
+#include "scicaml.hxx"
+#include "ocpsci.hxx"
 
 /*
 We must declare all stubs as C functions, otherwise they cannot be
@@ -96,9 +98,23 @@ extern "C" {
   value ocpsci_arrayof_get_c(value array_v, value pos_v);
   value ocpsci_arrayof_set_c(value array_v, value pos_v, value val_v);
   value ocpsci_map_c(value array_v);
+  value ocpsci_addElementToVariable_c(value option_v, value added_v, 
+				      value iRows_v, value iCols_v);
+
+
+  value ocpsci_overload_buildName0_c(value name_v);
+  value ocpsci_overload_buildName1_c(value name_v, value arg1_v);
+  value ocpsci_overload_buildName2_c(value name_v, value arg1_v, value arg2_v);
+  value ocpsci_getShortTypeStr_c(value val_v);
+  value ocpsci_overload_getNameFromOper_c(value oper_v);
+  value ocpsci_equal_c(value left_v, value right_v);
+  value ocpsci_nequal_c(value left_v, value right_v);
+
+  value ocpsci_free_wstring_c(value s_v);
+  value ocpsci_parse_wstring_c(value s_v);
+
 }
 
-#define Scilab_val(v) (*((types::InternalType**) Data_custom_val(v)))
 
 /* types class hierarchy
 InternalType
@@ -225,19 +241,25 @@ matrices. We should implement a lexicographic comparison on matrices.
 int ocpsci_compare_scilab(value ptr1_v, value ptr2_v)
 {
   int res;
+  int ret = 0;
 
-  types::InternalType *ptr1 = Scilab_val(ptr1_v);
-  types::InternalType *ptr2 = Scilab_val(ptr2_v);
-  types::InternalType *pResult = GenericLess(ptr1, ptr2);
-  res = bConditionState(pResult);
-  delete pResult;
-  if( res ) return -1;
-  pResult = GenericGreater(ptr1, ptr2);
-  res = bConditionState(pResult);
-  delete pResult;
-  if( res ) return 1;
+  //  try {
+    types::InternalType *ptr1 = Scilab_val(ptr1_v);
+    types::InternalType *ptr2 = Scilab_val(ptr2_v);
+    types::InternalType *pResult = GenericLess(ptr1, ptr2);
+    res = bConditionState(pResult);
+    delete pResult;
+    if( res ) { 
+      ret = -1; 
+    } else {
+      pResult = GenericGreater(ptr1, ptr2);
+      res = bConditionState(pResult);
+      delete pResult;
+      if( res ) ret = 1;
+    }
+    //  } catch 
 
-  return 0;
+  return ret;
 }
 
 struct custom_operations ocpsci_custom_ops = {
@@ -251,12 +273,22 @@ struct custom_operations ocpsci_custom_ops = {
 
 value Val_scilab(types::InternalType *t_s)
 {
+  if( t_s == NULL )
+    caml_failwith("Val_scilab(NULL)");
+
   t_s->IncreaseRef();
   value res_v = caml_alloc_custom(&ocpsci_custom_ops, sizeof(t_s), 1, 1000);
   Scilab_val(res_v) = t_s;
   return res_v;
 }
 
+
+static std::wstring Wstring_val(value s_v)
+{
+  int size = caml_string_length(s_v);
+  const wchar_t *c_str = (const wchar_t *)(s_v);  
+  return std::wstring(c_str, size / sizeof(wchar_t));
+}
 
 value Val_wstring(const std::wstring & w)
 {
@@ -605,13 +637,6 @@ value ocpsci_sci2ml_string_c(value s_v, value pos_v)
   return Val_wstring( s_s->get(Int_val(pos_v)) );
 }
 
-static std::wstring Wstring_val(value s_v)
-{
-  int size = caml_string_length(s_v);
-  const wchar_t *c_str = (const wchar_t *)(s_v);  
-  return std::wstring(c_str, size / sizeof(wchar_t));
-}
-
 
 value ocpsci_ml2sci_string_c(value s_v){
   value res_v;
@@ -703,38 +728,6 @@ ast::OpExp::Oper OpExpOper_val(value oper_v)
    }
   caml_failwith("Unknown OpExp::Oper");
 }
-
-/* code from run_OpExp.hxx */
-/* TODO: check that replacing 'this' by 'NULL' in calls to Overload is OK */
-types::InternalType* callOverload(OpExp::Oper _oper, types::InternalType* _paramL, types::InternalType* _paramR)
-{
-    types::typed_list in;
-    types::typed_list out;
-
-    /*
-    ** Special case for unary minus => will call %{type_s}
-    */
-    if (_oper == OpExp::unaryMinus)
-    {
-        _paramR->IncreaseRef();
-        in.push_back(_paramR);
-        Overload::generateNameAndCall(Overload::getNameFromOper(_oper), in, 1, out, NULL);
-
-        _paramR->DecreaseRef();
-        return out[0];
-    }
-    _paramL->IncreaseRef();
-    _paramR->IncreaseRef();
-    in.push_back(_paramL);
-    in.push_back(_paramR);
-
-    Overload::generateNameAndCall(Overload::getNameFromOper(_oper), in, 1, out, NULL);
-
-    _paramL->DecreaseRef();
-    _paramR->DecreaseRef();
-    return out[0];
-}
-
 
 
 value ocpsci_operation_c(value oper_v, value left_v, value right_v)
@@ -854,10 +847,7 @@ value ocpsci_operation_c(value oper_v, value left_v, value right_v)
 
 
     if (res_s == NULL)
-      {
-	// We did not have any algorithm matching, so we try to call OverLoad
-	res_s = callOverload(oper_s, left_s, right_s);
-      }
+      caml_failwith( "OVERLOAD" );
 
   } catch (ScilabError error)
     {
@@ -1070,3 +1060,103 @@ value ocpsci_dollar_c(value unit_v)
   return Val_scilab(new types::Dollar());
 }
 
+value ocpsci_addElementToVariable_c(value option_v, value added_v, 
+				      value iRows_v, value iCols_v)
+{
+  InternalType *p_s;
+  
+  if( option_v == Val_int(0) ) { p_s = NULL; } 
+  else {
+    p_s = Scilab_val( Field(option_v, 0) );
+  }
+
+  InternalType *added_s = Scilab_val(added_v);
+  InternalType *res_s = 
+    AddElementToVariable(p_s, added_s, 
+			 Int_val(iRows_v), Int_val(iCols_v));
+
+  if( res_s == p_s ) return Field(option_v, 0);
+  return Val_scilab( res_s );
+}
+
+value ocpsci_overload_buildName0_c(value name_v)
+{
+  std::wstring _stFunctionName = Wstring_val(name_v);
+  return Val_wstring( L"%_" + _stFunctionName );
+}
+
+value ocpsci_overload_buildName1_c(value name_v, value arg1_v)
+{
+  std::wstring _stFunctionName = Wstring_val(name_v);
+  InternalType *arg1_s = Scilab_val( arg1_v );
+
+  return 
+    Val_wstring( L"%" + _stFunctionName + L"_" + arg1_s->getShortTypeStr() );
+}
+
+value ocpsci_overload_buildName2_c(value name_v, value arg1_v, value arg2_v)
+{
+  std::wstring _stFunctionName = Wstring_val(name_v);
+  InternalType *arg1_s = Scilab_val( arg1_v );
+  InternalType *arg2_s = Scilab_val( arg2_v );
+
+  return 
+    Val_wstring( L"%" + arg1_s->getShortTypeStr() + L"_"
+		 + _stFunctionName + L"_" + arg2_s->getShortTypeStr() );
+}
+
+value ocpsci_getShortTypeStr_c(value val_v)
+{
+  return Val_wstring( Scilab_val(val_v)->getShortTypeStr() );
+}
+
+
+
+
+value ocpsci_overload_getNameFromOper_c(value oper_v)
+{
+  int code = Int_val(oper_v);
+  return Val_wstring( Overload::getNameFromOper( OpExpOper_val(oper_v) ) );
+}
+
+value ocpsci_equal_c(value left_v, value right_v){
+  InternalType *left_s = Scilab_val( left_v );
+  InternalType *right_s = Scilab_val( right_v );
+
+  return Val_bool( *left_s == *right_s );
+}
+
+value ocpsci_nequal_c(value left_v, value right_v){
+  InternalType *left_s = Scilab_val( left_v );
+  InternalType *right_s = Scilab_val( right_v );
+
+  return Val_bool( *left_s != *right_s );
+}
+
+
+value ocpsci_parse_wstring_c(value s_v)
+{
+  int size = caml_string_length(s_v);
+  const wchar_t *c_str = (const wchar_t *)(s_v);  
+
+  wchar_t* pstCommand = NULL;
+  Parser parser;
+  pstCommand = (wchar_t*)MALLOC(size + 2 * sizeof(wchar_t));
+  wcscpy(pstCommand, c_str);
+  int iPos = (int)wcslen(pstCommand);
+  pstCommand[iPos++] = L'\n';
+  pstCommand[iPos] = 0;     
+  parser.parse(pstCommand);
+  FREE(pstCommand);
+  ast::Exp* pExp = parser.getTree();
+  if(pExp == NULL) caml_failwith( "ParseError" );
+
+  char *res = scicaml_ast2string(pExp);	  
+  return (value) res;
+}
+
+value ocpsci_free_wstring_c(value s_v)
+{
+  free( (char*) s_v );
+  return Val_unit;
+}

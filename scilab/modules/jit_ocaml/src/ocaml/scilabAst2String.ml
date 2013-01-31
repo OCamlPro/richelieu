@@ -49,7 +49,7 @@ let buf_uint32_32 b nl =
 
 
 external jit_ocaml_set_double : string -> int -> float -> unit =
-    "jit_ocaml_set_double_c"
+    "scicaml_set_double_c"
 let double_len = 8
 let buf_double =
   let s = String.create double_len in
@@ -81,12 +81,14 @@ let buf_ast b exp code =
   buf_location b exp.exp_location;
   let i = exp.exp_info in
   buf_bool b i.is_verbose;
+(*
   buf_bool b i.is_break;
   buf_bool b i.is_breakable;
   buf_bool b i.is_return;
   buf_bool b i.is_returnable;
   buf_bool b i.is_continue;
   buf_bool b i.is_continuable;
+*)
   ()
 
 let buf_IntExp_Prec b prec =

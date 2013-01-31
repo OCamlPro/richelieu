@@ -53,23 +53,28 @@ let get_ast s pos =
   let loc, pos = get_location s pos in
 
   let is_verbose, pos = get_bool s pos in
+(*
   let is_break, pos = get_bool s pos in
   let is_breakable, pos = get_bool s pos in
   let is_return, pos = get_bool s pos in
   let is_returnable, pos = get_bool s pos in
   let is_continue, pos = get_bool s pos in
   let is_continuable, pos = get_bool s pos in
-
-  let exp_info = {
+*)
+  let exp_info =
+{
     is_verbose;
+(*
     is_break; is_breakable;
     is_return; is_returnable;
     is_continue; is_continuable;
-  } in
-  code, exp_info, loc, pos
+*)
+  }
+    in
+  code, exp_info , loc, pos
 
 let mkexp exp_desc exp_info exp_location =
-  { exp_desc; exp_location; exp_info }
+  { exp_desc; exp_location ; exp_info }
 
 
 let get_wstring s pos =
@@ -203,7 +208,7 @@ let get_TransposeExp_Kind s pos =
 
 
 external jit_ocaml_get_double : string -> int -> float =
-    "jit_ocaml_get_double_c"
+    "scicaml_get_double_c"
 let get_double s pos =
   let d = jit_ocaml_get_double s pos in
   let pos = pos + 8 in

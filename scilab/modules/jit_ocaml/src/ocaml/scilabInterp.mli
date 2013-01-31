@@ -1,4 +1,4 @@
 exception InterpFailed
 
-val interp : ScilabAst.exp -> ScilabContext.t
+val interp : ScilabAst.exp -> int -> ScilabContext.t array
 
