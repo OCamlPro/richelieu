@@ -92,6 +92,11 @@ extern "C"
 #include "setPrecisionFPU.h"
 #endif
 
+#include "jit_ocaml.hxx"
+extern "C" {
+#include "jit_ocaml.h"
+}
+
 #define INTERACTIVE     -1
 
 const wchar_t *prog_name;
@@ -650,7 +655,33 @@ static int batchMain(char *pstFileName)
      ** -*- PARSING -*-
      */
     parseFileTask(parser, timed, pwstFileName, L"YaSp");
-
+    /*  JIT-OCAML inter-format */
+    unsigned char *buffer;
+    printf("[C++_TREE]\n");
+    dumpAstTask(parser->getTree(), timed);
+    char *buf = scicaml_ast2string(parser->getTree());
+//buf = jit_ocaml_analyze(buf);
+    ast::Exp* ocaml_tree = scicaml_string2ast(buf);
+    printf("[OCAML_TREE]\n");
+    dumpAstTask(ocaml_tree, timed);
+    buffer = (unsigned char*)buf;
+    unsigned int c0 = *buffer++;
+    unsigned int c1 = *buffer++;
+    unsigned int c2 = *buffer++;
+    unsigned int c3 = *buffer++;
+    int buflen = c0 + ((c1 + ((c2 + (c3 << 8)) << 8 )) << 8 );
+    printf("[%i]\n",buflen);
+    printf("[%s]",buffer);
+    char binFileName[100];
+    const char* binFileExt = ".bin";
+    strcpy(binFileName,pstFileName);
+    strcat(binFileName,binFileExt);
+    FILE * pFile = fopen(binFileName, "wb" );
+    fwrite (buffer, sizeof(unsigned char), buflen, pFile);
+    fclose (pFile);
+    delete buf;
+    // delete(binFileExt);
+    // delete(binFileName);
     /*
      ** -*- DUMPING TREE -*-
      */
