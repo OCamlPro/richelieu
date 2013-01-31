@@ -13,14 +13,7 @@
       last_column = (end_pos.pos_cnum - end_pos.pos_bol) }
 
   let create_exp loc desc =
-    let infos =
-      { is_verbose = false;
-        is_break = false;
-        is_breakable = false;
-        is_return = false;
-        is_returnable = false;
-        is_continue = false;
-        is_continuable  = false} in
+    let infos = { is_verbose = false } in
     {exp_location = loc; exp_desc = desc; exp_info = infos}
 
   let create_dummy_exp () =
