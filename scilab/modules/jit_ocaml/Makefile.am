@@ -38,7 +38,8 @@ include $(top_srcdir)/Makefile.incl.am
 
 JIT_OCAML_CPP_SOURCES = \
 			src/cpp/scicaml_ast2string.cpp \
-			src/cpp/scicaml_string2ast.cpp
+			src/cpp/scicaml_string2ast.cpp \
+			src/c/ocpsci_ocaml.c
 
 libscijit_ocaml_la_CFLAGS = \
    -I$(srcdir)/includes \
@@ -127,10 +128,12 @@ OCAML_MLIS = \
 OCAML_PARSER_MLS = \
 	src/ocaml/scilabContext.ml \
 	src/ocaml/scilabAst.ml \
+	src/ocaml/scilabAstStats.ml \
 	src/ocaml/scilabString2Ast.ml \
 	src/ocaml/scilabPrettyPrinter.ml \
 	src/ocaml/scilabPreParser.ml \
 	src/ocaml/scilabAstPrinter.ml \
+	src/ocaml/scilabMisc.ml \
 	src/ocaml/scilabUtils.ml \
 	src/yacc/scilabParser.ml \
 	src/lex/scilabLexer.ml \
@@ -142,10 +145,12 @@ OCAML_CMIS = $(OCAML_MLS:.ml=.cmi) $(OCAML_MLIS:.mli=.cmi)
 OCAML_CMXS = $(OCAML_MLS:.ml=.cmx)
 OCAML_OBJS = $(OCAML_MLS:.ml=.o)
 
-OCAML_INCL= -I src/ocaml -I src/yacc -I src/lex
-OCAML_PARSER_INCL = -I src/yacc
-OPTFLAGS = -c -fPIC $(OCAML_INCL)
+UUTF_INCL = -I +../uutf uutf.cmxa
+#CAMOMILE_INCL = -I $(shell ocamlfind query camomile)
 
+OCAML_INCL= $(UUTF_INCL) -I src/ocaml -I src/yacc -I src/lex
+OCAML_PARSER_INCL = -I src/yacc
+OPTFLAGS = -g -c -fPIC $(OCAML_INCL)
 
 CLEANFILES= \
 	$(OCAML_CMIS)  \
@@ -165,7 +170,7 @@ CLEANFILES= \
 
 
 scilab_parser : $(OCAML_PARSER_CMXS)
-	$(OCAMLOPT) str.cmxa -o scilab_parser $(OCAML_PARSER_CMXS)
+	$(OCAMLOPT) bigarray.cmxa str.cmxa $(UUTF_INCL) -o scilab_parser $(OCAML_PARSER_CMXS) src/c/ocpsci_ocaml.c
 
 
 ocamlcode.o: $(OCAML_CMXS)

@@ -1,8 +1,9 @@
 {
-
+ 
   open Lexing
   open ScilabParser
 
+ 
   exception Err_str of string
 
   exception Lex_err of string
@@ -116,6 +117,33 @@
     let cnum = (curr.Lexing.pos_cnum - curr.Lexing.pos_bol - 1) in
     Printf.printf "Warning : %s at line %i, character %i." msg line cnum 
       
+
+(* Convertion to UTF32LE *)
+  let unicode_to_utf32le u =
+    let c0 = (u lsr 24) land 255 and
+        c1 = (u lsr 16) land 255 and
+        c2 = (u lsr 8) land 255 and
+        c3 = u land 255 in
+    let utf32 = String.make 4 '0' in
+    utf32.[0] <- Char.chr c3;
+    utf32.[1] <- Char.chr c2;
+    utf32.[2] <- Char.chr c1;
+    utf32.[3] <- Char.chr c0;
+    utf32
+      
+  let utf_8_normalize s = 
+    let b = Buffer.create (String.length s * 3) in
+    (* let n = Uunf.create nf in *)
+    let rec add v = match (* Uunf.add n *) v with 
+      | `Uchar u -> Buffer.add_string b (unicode_to_utf32le u); add `Await 
+      | _ -> ()
+    in
+    let add_uchar _ _ = function 
+      | `Malformed _ -> add (`Uchar Uutf.u_rep) 
+      | `Uchar c as u -> add u
+    in
+    Uutf.String.fold_utf_8 add_uchar () s; add `End; Buffer.contents b
+
 
 }
 
@@ -377,7 +405,8 @@ rule token = parse
   | booloror                     { return_token OROR }
   | id as ident                  { if (not (in_matrix ())) & (is_EOL () || is_SOF ())
                                    then shellmode_on := true;
-                                   return_id (ID ident)
+                                   let id8 = utf_8_normalize ident in
+                                   return_id (ID id8)
                                    (* (\*shellmode lexbuf*\) *)
                                    (*   else return_token (ID ident) *)
                                    (* else return_token (ID ident) *) }
@@ -401,32 +430,37 @@ and commentblock = parse
   | _ as c                       { str_cmt := !str_cmt^(String.make 1 c); commentblock lexbuf }
 
 and doublestr = parse
-  | dquote                       { return_token (STR !str) }
+  | dquote                       { let s = utf_8_normalize !str in
+                                   return_token (STR s) }
   | dquote dquote                { str := !str^"\"\""; doublestr lexbuf }
   | dquote quote                 { str := !str^"\"\'"; doublestr lexbuf }
   | quote dquote                 { str := !str^"\'\""; doublestr lexbuf }
   | quote quote                  { str := !str^"\'\'"; doublestr lexbuf }
   | quote                        { let msg = "Heterogeneous string, starting with \" and ending with \' only allowed in scilab 5" in
                                    warning_only_scila5 msg lexbuf;
-                                   return_token (STR !str) }
+                                   let s = utf_8_normalize !str in
+                                   return_token (STR s) }
   | next newline                 { newline_lex lexbuf; doublestr lexbuf }
   | newline                      { raise (Err_str "Error : unexpected newline in a string ") }
   | eof                          { raise (Err_str "Error : unexpected end of file in a string ") }
   | _ as c                       { str := !str^(String.make 1 c); doublestr lexbuf }
 
 and simplestr = parse
-  | quote                        { return_token (STR !str)}
+  | quote                        { let s = utf_8_normalize !str in
+                                   return_token (STR s) }
   | dquote dquote                { str := !str^"\"\""; simplestr lexbuf }
   | dquote quote                 { str := !str^"\"\'"; simplestr lexbuf }
   | quote dquote                 { str := !str^"\'\""; simplestr lexbuf }
   | quote quote                  { str := !str^"\'\'"; simplestr lexbuf }
   | dquote                       { let msg = "Heterogeneous string, starting with \' and ending with \" only allowed in scilab 5" in
                                    warning_only_scila5 msg lexbuf;
-                                   return_token (STR !str) }
+                                   let s = utf_8_normalize !str in
+                                   return_token (STR s) }
   | next newline                 { newline_lex lexbuf; simplestr lexbuf }
   | newline                      { raise (Err_str "Error : unexpected newline in a string ") }
   | eof                          { raise (Err_str "Error : unexpected end of file in a string ") }
-  | _ as c                       { str := !str^(String.make 1 c); simplestr lexbuf }
+  | utf as u                     { str := !str ^ u; simplestr lexbuf }
+  | _ as c                       { str := !str^(Char.escaped c); simplestr lexbuf }
       
 and shellmode = parse
   | spaces+                      { shellmode lexbuf }

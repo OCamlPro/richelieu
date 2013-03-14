@@ -87,6 +87,7 @@ let to_string_err_logoper op = match op with
 
 let raise_err str1 str2 =
   let msg = str1 ^ " <> " ^ str2 in
+  Printf.printf "[%s]\n" msg;
   raise (Not_equal msg)
 
 let rec is_equal_var var1 var2 = match var1.var_desc, var2.var_desc with
@@ -95,6 +96,14 @@ let rec is_equal_var var1 var2 = match var1.var_desc, var2.var_desc with
   | SimpleVar v1, SimpleVar v2 -> 
       let str1 = ScilabContext.symbol_name v1 and
           str2 = ScilabContext.symbol_name v2 in
+      Printf.printf 
+        "['%s'(%i) ? '%s'(%i)] = %b %i \n" 
+        str1 
+        (String.length str1) 
+        str2 
+        (String.length str2) 
+        (str1 = str2)
+        (String.compare str1 str2);
       if str1 = str2
       then true
       else raise_err str1 str2
@@ -140,6 +149,18 @@ let is_equal_constexp const1 const2 = match const1, const2 with
           (Int32.to_string intexp2.intExp_value) 
   | NilExp, NilExp -> true
   | StringExp stringexp1, StringExp stringexp2 -> 
+      let test str =
+        String.iteri (fun i x -> Printf.printf "%i : %i\n" i (Char.code x)) str in
+      test stringexp1.stringExp_value;
+      test stringexp2.stringExp_value;
+      Printf.printf
+        "['%s'(%i) ? '%s'(%i)] = %b %i\n"
+        stringexp1.stringExp_value
+        (String.length stringexp1.stringExp_value)
+        stringexp2.stringExp_value
+        (String.length stringexp2.stringExp_value)
+        (stringexp1.stringExp_value = stringexp2.stringExp_value)
+        (String.compare stringexp1.stringExp_value stringexp2.stringExp_value );
       if stringexp1.stringExp_value = stringexp2.stringExp_value
       then true
       else 
