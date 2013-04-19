@@ -218,7 +218,8 @@ let get_double s pos =
   d, pos
 *)
 let get_double s pos =
-  let floatstring = String.sub s pos 8 in
+  let floatstring = String.create 8 in
+  String.unsafe_blit s pos floatstring 0 8;
   let d = Array.unsafe_get (Obj.magic floatstring : float array) 0 in
   let pos = pos + 8 in
   d, pos
