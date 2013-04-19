@@ -68,3 +68,30 @@ This plugin is composed of two parts:
    - some C stubs to initialize the OCaml runtime, and register a function
      to perform the analysis on the serialized AST
    - The OCaml code that does the analysis 
+
+# scilint
+
+## Current status
+
+What it does :
+
+- OCaml parser for scilab program
+- OCaml AST pretty printer
+- OCaml AST analyzer
+   - stats on ident
+   - stats on deff / execstr uses
+- OCaml AST typer (very early version) 
+
+## How to build
+
+  make scilab_parser
+
+## How to use
+
+./scilab_parser [-t] [-eq file] [-analyze file] [file]
+  -t : run tests (run one of the following feature (hard coded !) on scilab files given a directory (hard coded !))
+  -eq : test c++/ocaml ast, file is in intermediate format
+  -a : analyze scilab source code
+  -typ : try to type a scilab program
+  -help  Display this list of options
+  --help  Display this list of options
