@@ -10,5 +10,7 @@
  *
  *)
 
+val string_of_unicode : string -> string
+
 val to_string : ScilabAst.exp -> string
 

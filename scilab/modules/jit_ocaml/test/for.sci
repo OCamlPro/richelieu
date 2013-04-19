@@ -1,1 +1,3 @@
-for (i = 1) disp(2) end
+for i = 1:10 
+  disp(i);
+end
