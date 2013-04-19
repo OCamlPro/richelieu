@@ -212,7 +212,6 @@ and ifExp_Kind =
   IfExp_invalid_kind
 | IfExp_instruction_kind
 | IfExp_expression_kind
-
 | IfExp_untyped_kind (* not yet known *)
 
 and returnExp = {

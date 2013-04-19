@@ -39,7 +39,7 @@ include $(top_srcdir)/Makefile.incl.am
 JIT_OCAML_CPP_SOURCES = \
 			src/cpp/scicaml_ast2string.cpp \
 			src/cpp/scicaml_string2ast.cpp \
-			src/c/ocpsci_ocaml.c
+			src/cpp/scicaml_stubs.cpp
 
 libscijit_ocaml_la_CFLAGS = \
    -I$(srcdir)/includes \
@@ -136,11 +136,15 @@ OCAML_PARSER_MLS = \
 	src/ocaml/scilabMisc.ml \
 	src/ocaml/scilabUtils.ml \
 	src/yacc/scilabParser.ml \
+	src/lex/uutf.ml \
 	src/lex/scilabLexer.ml \
 	src/ocaml/scilabDeffRefactoring.ml \
 	src/ocaml/scilabTyper.ml \
 	src/ocaml/scilabAstStats.ml \
 	src/ocaml/scilabParserMain.ml
+
+OCAML_PARSER_MLIS= \
+	src/lex/uutf.mli
 
 OCAML_PARSER_CMXS = $(OCAML_PARSER_MLS:.ml=.cmx)
 
@@ -148,7 +152,7 @@ OCAML_CMIS = $(OCAML_MLS:.ml=.cmi) $(OCAML_MLIS:.mli=.cmi)
 OCAML_CMXS = $(OCAML_MLS:.ml=.cmx)
 OCAML_OBJS = $(OCAML_MLS:.ml=.o)
 
-UUTF_INCL = -I +../uutf uutf.cmxa
+#UUTF_INCL = -I +../uutf uutf.cmxa
 #CAMOMILE_INCL = -I $(shell ocamlfind query camomile)
 
 OCAML_INCL= $(UUTF_INCL) -I src/ocaml -I src/yacc -I src/lex
@@ -172,8 +176,9 @@ CLEANFILES= \
 	macros/lib
 
 
-scilab_parser : $(OCAML_PARSER_CMXS)
-	$(OCAMLOPT) bigarray.cmxa str.cmxa $(UUTF_INCL) -o scilab_parser $(OCAML_PARSER_CMXS) src/c/ocpsci_ocaml.c
+scilint : $(OCAML_PARSER_CMXS)
+	$(OCAMLOPT) bigarray.cmxa str.cmxa \
+	  -o scilint $(OCAML_PARSER_CMXS)
 
 
 ocamlcode.o: $(OCAML_CMXS)
@@ -185,8 +190,8 @@ libunix.a:
 	cp $(OCAMLLIB)/libunix.a .
 
 
-depend_ocaml:
-	$(OCAMLDEP) -native $(OCAML_INCL) $(OCAML_MLS) $(OCAML_MLIS) $(OCAML_PARSER_MLS) > .depend_ocaml
+depend_ocaml: $(OCAML_PARSER_MLS)
+	$(OCAMLDEP) -native $(OCAML_INCL) $(OCAML_MLS) $(OCAML_MLIS) $(OCAML_PARSER_MLS) $(OCAML_PARSER_MLIS) > .depend_ocaml
 include .depend_ocaml
 
 ########## COMMON

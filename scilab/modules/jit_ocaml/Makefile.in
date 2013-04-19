@@ -153,7 +153,8 @@ am_libocpsci_la_OBJECTS = libocpsci_la-scicaml_stubs.lo \
 libocpsci_la_OBJECTS = $(am_libocpsci_la_OBJECTS)
 libscijit_ocaml_la_DEPENDENCIES = ocamlcode.o
 am__objects_1 = libscijit_ocaml_la-scicaml_ast2string.lo \
-	libscijit_ocaml_la-scicaml_string2ast.lo
+	libscijit_ocaml_la-scicaml_string2ast.lo \
+	libscijit_ocaml_la-scicaml_stubs.lo
 am_libscijit_ocaml_la_OBJECTS = $(am__objects_1)
 libscijit_ocaml_la_OBJECTS = $(am_libscijit_ocaml_la_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/modules/core/includes
@@ -531,7 +532,8 @@ HELP_CHAPTERFILE = addchapter.sce
 HELP_CHAPTERLANG = en_US fr_FR pt_BR
 JIT_OCAML_CPP_SOURCES = \
 			src/cpp/scicaml_ast2string.cpp \
-			src/cpp/scicaml_string2ast.cpp
+			src/cpp/scicaml_string2ast.cpp \
+			src/cpp/scicaml_stubs.cpp
 
 libscijit_ocaml_la_CFLAGS = \
    -I$(srcdir)/includes \
@@ -615,18 +617,33 @@ OCAML_MLIS = \
 OCAML_PARSER_MLS = \
 	src/ocaml/scilabContext.ml \
 	src/ocaml/scilabAst.ml \
+	src/ocaml/scilabString2Ast.ml \
+	src/ocaml/scilabPreParser.ml \
 	src/ocaml/scilabAstPrinter.ml \
+	src/ocaml/scilabPrettyPrinter.ml \
+	src/ocaml/scilabMisc.ml \
+	src/ocaml/scilabUtils.ml \
 	src/yacc/scilabParser.ml \
+	src/lex/uutf.ml \
 	src/lex/scilabLexer.ml \
+	src/ocaml/scilabDeffRefactoring.ml \
+	src/ocaml/scilabTyper.ml \
+	src/ocaml/scilabAstStats.ml \
 	src/ocaml/scilabParserMain.ml
+
+OCAML_PARSER_MLIS = \
+	src/lex/uutf.mli
 
 OCAML_PARSER_CMXS = $(OCAML_PARSER_MLS:.ml=.cmx)
 OCAML_CMIS = $(OCAML_MLS:.ml=.cmi) $(OCAML_MLIS:.mli=.cmi)
 OCAML_CMXS = $(OCAML_MLS:.ml=.cmx)
 OCAML_OBJS = $(OCAML_MLS:.ml=.o)
-OCAML_INCL = -I src/ocaml -I src/yacc -I src/lex
+
+#UUTF_INCL = -I +../uutf uutf.cmxa
+#CAMOMILE_INCL = -I $(shell ocamlfind query camomile)
+OCAML_INCL = $(UUTF_INCL) -I src/ocaml -I src/yacc -I src/lex
 OCAML_PARSER_INCL = -I src/yacc
-OPTFLAGS = -c -fPIC $(OCAML_INCL)
+OPTFLAGS = -g -c -fPIC $(OCAML_INCL)
 CLEANFILES = \
 	$(OCAML_CMIS)  \
 	$(OCAML_CMXS)  \
@@ -735,6 +752,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libocpsci_la-scicaml_stubs.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libscijit_ocaml_la-scicaml_ast2string.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libscijit_ocaml_la-scicaml_string2ast.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libscijit_ocaml_la-scicaml_stubs.Plo@am__quote@
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -791,6 +809,13 @@ libscijit_ocaml_la-scicaml_string2ast.lo: src/cpp/scicaml_string2ast.cpp
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='src/cpp/scicaml_string2ast.cpp' object='libscijit_ocaml_la-scicaml_string2ast.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libscijit_ocaml_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libscijit_ocaml_la-scicaml_string2ast.lo `test -f 'src/cpp/scicaml_string2ast.cpp' || echo '$(srcdir)/'`src/cpp/scicaml_string2ast.cpp
+
+libscijit_ocaml_la-scicaml_stubs.lo: src/cpp/scicaml_stubs.cpp
+@am__fastdepCXX_TRUE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libscijit_ocaml_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT libscijit_ocaml_la-scicaml_stubs.lo -MD -MP -MF $(DEPDIR)/libscijit_ocaml_la-scicaml_stubs.Tpo -c -o libscijit_ocaml_la-scicaml_stubs.lo `test -f 'src/cpp/scicaml_stubs.cpp' || echo '$(srcdir)/'`src/cpp/scicaml_stubs.cpp
+@am__fastdepCXX_TRUE@	$(am__mv) $(DEPDIR)/libscijit_ocaml_la-scicaml_stubs.Tpo $(DEPDIR)/libscijit_ocaml_la-scicaml_stubs.Plo
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	source='src/cpp/scicaml_stubs.cpp' object='libscijit_ocaml_la-scicaml_stubs.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(LIBTOOL)  --tag=CXX $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libscijit_ocaml_la_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o libscijit_ocaml_la-scicaml_stubs.lo `test -f 'src/cpp/scicaml_stubs.cpp' || echo '$(srcdir)/'`src/cpp/scicaml_stubs.cpp
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -1263,8 +1288,9 @@ distclean-local:
 
 .PHONY: macros java swig giws
 
-scilab_parser : $(OCAML_PARSER_CMXS)
-	$(OCAMLOPT) -o scilab_parser $(OCAML_PARSER_CMXS)
+scilint : $(OCAML_PARSER_CMXS)
+	$(OCAMLOPT) bigarray.cmxa str.cmxa \
+	  -o scilint $(OCAML_PARSER_CMXS)
 
 ocamlcode.o: $(OCAML_CMXS)
 	$(OCAMLOPT) -o ocamlcode.o -output-obj unix.cmxa $(OCAML_CMXS)
@@ -1274,8 +1300,8 @@ libasmrun.a:
 libunix.a:
 	cp $(OCAMLLIB)/libunix.a .
 
-depend_ocaml:
-	$(OCAMLDEP) -native $(OCAML_INCL) $(OCAML_MLS) $(OCAML_MLIS) $(OCAML_PARSER_MLS) > .depend_ocaml
+depend_ocaml: $(OCAML_PARSER_MLS)
+	$(OCAMLDEP) -native $(OCAML_INCL) $(OCAML_MLS) $(OCAML_MLIS) $(OCAML_PARSER_MLS) $(OCAML_PARSER_MLIS) > .depend_ocaml
 src/ocaml/scilabMisc.cmo : src/ocaml/scilabMisc.cmi
 src/ocaml/scilabMisc.cmx : src/ocaml/scilabMisc.cmi
 src/ocaml/scilabValue.cmo : src/ocaml/scilabValue.cmi
@@ -1298,10 +1324,12 @@ src/ocaml/scilabAst2String.cmo : src/ocaml/scilabContext.cmi \
     src/ocaml/scilabAst.cmx src/ocaml/scilabAst2String.cmi
 src/ocaml/scilabAst2String.cmx : src/ocaml/scilabContext.cmx \
     src/ocaml/scilabAst.cmx src/ocaml/scilabAst2String.cmi
-src/ocaml/scilabInternalType.cmo : src/ocaml/scilabMisc.cmi \
-    src/ocaml/scilabContext.cmi src/ocaml/scilabInternalType.cmi
-src/ocaml/scilabInternalType.cmx : src/ocaml/scilabMisc.cmx \
-    src/ocaml/scilabContext.cmx src/ocaml/scilabInternalType.cmi
+src/ocaml/scilabInternalType.cmo : src/ocaml/scilabString2Ast.cmi \
+    src/ocaml/scilabMisc.cmi src/ocaml/scilabContext.cmi \
+    src/ocaml/scilabInternalType.cmi
+src/ocaml/scilabInternalType.cmx : src/ocaml/scilabString2Ast.cmx \
+    src/ocaml/scilabMisc.cmx src/ocaml/scilabContext.cmx \
+    src/ocaml/scilabInternalType.cmi
 src/ocaml/scilabInterp.cmo : src/ocaml/scilabInternalType.cmi \
     src/ocaml/scilabContext.cmi src/ocaml/scilabAstPrinter.cmi \
     src/ocaml/scilabAst.cmx src/ocaml/scilabInterp.cmi
@@ -1321,7 +1349,8 @@ src/ocaml/scilabContext.cmi :
 src/ocaml/scilabAstPrinter.cmi : src/ocaml/scilabAst.cmx
 src/ocaml/scilabString2Ast.cmi : src/ocaml/scilabAst.cmx
 src/ocaml/scilabAst2String.cmi : src/ocaml/scilabAst.cmx
-src/ocaml/scilabInternalType.cmi : src/ocaml/scilabContext.cmi
+src/ocaml/scilabInternalType.cmi : src/ocaml/scilabString2Ast.cmi \
+    src/ocaml/scilabContext.cmi
 src/ocaml/scilabInterp.cmi : src/ocaml/scilabContext.cmi \
     src/ocaml/scilabAst.cmx
 src/ocaml/scilabCallbacks.cmi :
@@ -1329,22 +1358,59 @@ src/ocaml/scilabContext.cmo : src/ocaml/scilabContext.cmi
 src/ocaml/scilabContext.cmx : src/ocaml/scilabContext.cmi
 src/ocaml/scilabAst.cmo : src/ocaml/scilabContext.cmi
 src/ocaml/scilabAst.cmx : src/ocaml/scilabContext.cmx
+src/ocaml/scilabString2Ast.cmo : src/ocaml/scilabContext.cmi \
+    src/ocaml/scilabAst.cmx src/ocaml/scilabString2Ast.cmi
+src/ocaml/scilabString2Ast.cmx : src/ocaml/scilabContext.cmx \
+    src/ocaml/scilabAst.cmx src/ocaml/scilabString2Ast.cmi
+src/ocaml/scilabPreParser.cmo :
+src/ocaml/scilabPreParser.cmx :
 src/ocaml/scilabAstPrinter.cmo : src/ocaml/scilabContext.cmi \
     src/ocaml/scilabAst.cmx src/ocaml/scilabAstPrinter.cmi
 src/ocaml/scilabAstPrinter.cmx : src/ocaml/scilabContext.cmx \
     src/ocaml/scilabAst.cmx src/ocaml/scilabAstPrinter.cmi
+src/ocaml/scilabPrettyPrinter.cmo : src/ocaml/scilabContext.cmi \
+    src/ocaml/scilabAstPrinter.cmi src/ocaml/scilabAst.cmx
+src/ocaml/scilabPrettyPrinter.cmx : src/ocaml/scilabContext.cmx \
+    src/ocaml/scilabAstPrinter.cmx src/ocaml/scilabAst.cmx
+src/ocaml/scilabMisc.cmo : src/ocaml/scilabMisc.cmi
+src/ocaml/scilabMisc.cmx : src/ocaml/scilabMisc.cmi
+src/ocaml/scilabUtils.cmo : src/ocaml/scilabContext.cmi \
+    src/ocaml/scilabAst.cmx
+src/ocaml/scilabUtils.cmx : src/ocaml/scilabContext.cmx \
+    src/ocaml/scilabAst.cmx
 src/yacc/scilabParser.cmo : src/ocaml/scilabContext.cmi \
     src/ocaml/scilabAst.cmx src/yacc/scilabParser.cmi
 src/yacc/scilabParser.cmx : src/ocaml/scilabContext.cmx \
     src/ocaml/scilabAst.cmx src/yacc/scilabParser.cmi
-src/lex/scilabLexer.cmo : src/yacc/scilabParser.cmi
-src/lex/scilabLexer.cmx : src/yacc/scilabParser.cmx
-src/ocaml/scilabParserMain.cmo : src/yacc/scilabParser.cmi \
-    src/lex/scilabLexer.cmx src/ocaml/scilabAstPrinter.cmi \
+src/lex/uutf.cmo : src/lex/uutf.cmi
+src/lex/uutf.cmx : src/lex/uutf.cmi
+src/lex/scilabLexer.cmo : src/lex/uutf.cmi src/yacc/scilabParser.cmi
+src/lex/scilabLexer.cmx : src/lex/uutf.cmx src/yacc/scilabParser.cmx
+src/ocaml/scilabDeffRefactoring.cmo : src/ocaml/scilabContext.cmi \
     src/ocaml/scilabAst.cmx
-src/ocaml/scilabParserMain.cmx : src/yacc/scilabParser.cmx \
-    src/lex/scilabLexer.cmx src/ocaml/scilabAstPrinter.cmx \
+src/ocaml/scilabDeffRefactoring.cmx : src/ocaml/scilabContext.cmx \
     src/ocaml/scilabAst.cmx
+src/ocaml/scilabTyper.cmo : src/ocaml/scilabContext.cmi \
+    src/ocaml/scilabAst.cmx
+src/ocaml/scilabTyper.cmx : src/ocaml/scilabContext.cmx \
+    src/ocaml/scilabAst.cmx
+src/ocaml/scilabAstStats.cmo : src/ocaml/scilabContext.cmi \
+    src/ocaml/scilabAstPrinter.cmi src/ocaml/scilabAst.cmx
+src/ocaml/scilabAstStats.cmx : src/ocaml/scilabContext.cmx \
+    src/ocaml/scilabAstPrinter.cmx src/ocaml/scilabAst.cmx
+src/ocaml/scilabParserMain.cmo : src/ocaml/scilabUtils.cmx \
+    src/ocaml/scilabTyper.cmx src/ocaml/scilabString2Ast.cmi \
+    src/ocaml/scilabPreParser.cmx src/yacc/scilabParser.cmi \
+    src/lex/scilabLexer.cmx src/ocaml/scilabDeffRefactoring.cmx \
+    src/ocaml/scilabAstStats.cmx src/ocaml/scilabAstPrinter.cmi \
+    src/ocaml/scilabAst.cmx
+src/ocaml/scilabParserMain.cmx : src/ocaml/scilabUtils.cmx \
+    src/ocaml/scilabTyper.cmx src/ocaml/scilabString2Ast.cmx \
+    src/ocaml/scilabPreParser.cmx src/yacc/scilabParser.cmx \
+    src/lex/scilabLexer.cmx src/ocaml/scilabDeffRefactoring.cmx \
+    src/ocaml/scilabAstStats.cmx src/ocaml/scilabAstPrinter.cmx \
+    src/ocaml/scilabAst.cmx
+src/lex/uutf.cmi :
 
 .ml.cmx:
 	$(OCAMLOPT) $(OPTFLAGS) -c $<

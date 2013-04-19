@@ -84,11 +84,11 @@ What it does :
 
 ## How to build
 
-  make scilab_parser
+  make scilint
 
 ## How to use
 
-./scilab_parser [-t] [-eq file] [-analyze file] [file]
+./scilint [-t] [-eq file] [-analyze file] [file]
   -t : run tests (run one of the following feature (hard coded !) on scilab files given a directory (hard coded !))
   -eq : test c++/ocaml ast, file is in intermediate format
   -a : analyze scilab source code

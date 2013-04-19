@@ -208,11 +208,18 @@ let get_TransposeExp_Kind s pos =
   in
   kind, pos
 
+(* We get rid of this external by recoding it in "untyped OCaml"
 
 external jit_ocaml_get_double : string -> int -> float =
     "scicaml_get_double_c"
 let get_double s pos =
   let d = jit_ocaml_get_double s pos in
+  let pos = pos + 8 in
+  d, pos
+*)
+let get_double s pos =
+  let floatstring = String.sub s pos 8 in
+  let d = Array.unsafe_get (Obj.magic floatstring : float array) 0 in
   let pos = pos + 8 in
   d, pos
 
