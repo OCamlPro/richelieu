@@ -34,12 +34,12 @@ exception TooManyArguments of string * int * int
 
 exception BreakExn
 exception ContinueExn
-exception ReturnExn of (ScilabContext.symbol * Sci.t) list
+exception ReturnExn of (ScilabSymbol.symbol * Sci.t) list
 
-let nargin_sy = ScilabContext.new_symbol "nargin"
-let nargout_sy = ScilabContext.new_symbol "nargout"
-let varargin_sy = ScilabContext.new_symbol "varargin"
-let varargout_sy = ScilabContext.new_symbol "varargout"
+let nargin_sy = ScilabSymbol.new_symbol "nargin"
+let nargout_sy = ScilabSymbol.new_symbol "nargout"
+let varargin_sy = ScilabSymbol.new_symbol "varargin"
+let varargout_sy = ScilabSymbol.new_symbol "varargout"
 
 let context_get ctx sy =
   try
@@ -141,7 +141,7 @@ let _ =
   let fun_names = Sci.get_funlist () in
   Array.iter (fun name ->
     let v = Sci.context_get name in
-    ScilabContext.put ctx (ScilabContext.new_symbol name) v
+    ScilabContext.put ctx (ScilabSymbol.new_symbol name) v
   ) fun_names
 
 let rec interp env exp : Sci.t option =
@@ -322,11 +322,11 @@ let rec interp env exp : Sci.t option =
         match binop with
         | Sci.UnaryMinus ->
           let name = Sci.overload_buildName1 name right in
-          let f = context_get ctx (ScilabContext.new_symbol name) in
+          let f = context_get ctx (ScilabSymbol.new_symbol name) in
           Sci.call f [| right |] [| |] 1
         | _ ->
           let name = Sci.overload_buildName2 name left right in
-          let f = context_get ctx (ScilabContext.new_symbol name) in
+          let f = context_get ctx (ScilabSymbol.new_symbol name) in
           Sci.call f [| left; right |] [| |] 1
         )
     end
@@ -494,7 +494,7 @@ let rec interp env exp : Sci.t option =
   | Dec (FunctionDec f) ->
     let ctx = ScilabContext.getInstance () in
     let sy = f.functionDec_symbol in
-    let name = ScilabContext.symbol_name sy in
+    let name = ScilabSymbol.symbol_name sy in
     let f args opt_args iRetCount =
       ScilabContext.begin_scope ctx;
       (* TODO: we can catch exceptions and recover the current scope,
@@ -902,7 +902,7 @@ let unicode_of_ascii s =
 let declare_macro macro_name f =
   let ctx = ScilabContext.getInstance () in
   let macro_name = unicode_of_ascii macro_name in
-  ScilabContext.put ctx (ScilabContext.new_symbol macro_name)
+  ScilabContext.put ctx (ScilabSymbol.new_symbol macro_name)
     (Sci.ocamlfunction macro_name f)
 
 exception FromToplevel
@@ -916,7 +916,7 @@ let _ =
         match Sci.get_type v with
         | Sci.RealString ->
           ScilabContext.global ctx
-            (ScilabContext.new_symbol (Sci.get_string v 0))
+            (ScilabSymbol.new_symbol (Sci.get_string v 0))
         | _ -> failwith "global with Wrong type of argument"
       ) args;
       Some [||]
@@ -969,7 +969,7 @@ let _ =
 
   let ctx = ScilabContext.getInstance () in
   let macro_name = unicode_of_ascii "SCI" in
-  ScilabContext.put ctx (ScilabContext.new_symbol macro_name)
+  ScilabContext.put ctx (ScilabSymbol.new_symbol macro_name)
     (Sci.string (unicode_of_ascii (Unix.getcwd ())));
   ()
 

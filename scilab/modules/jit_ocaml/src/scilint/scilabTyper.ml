@@ -56,8 +56,8 @@ let string_of_opExp_Oper = function
   | OpExp_ge -> " OpExp_ge "
 
 let rec get_stronger_type t1 t2 = match (t1, t2) with
-  | Type_base bt1, Type_base bt2  -> 
-      begin 
+  | Type_base bt1, Type_base bt2  ->
+      begin
         match bt1, bt2 with
           | Type_bool, _ -> Type_base bt2
           | Type_real, Type_bool -> Type_base bt1
@@ -70,8 +70,8 @@ let rec get_stronger_type t1 t2 = match (t1, t2) with
   | _, _ -> failwith ("Matrix' elements have different types : " ^ string_of_t t1 ^ " and " ^ string_of_t t2)
 
 let rec type_arithmetic_op str_op t1 t2 = match (t1, t2) with
-  | Type_base bt1, Type_base bt2  -> 
-      begin 
+  | Type_base bt1, Type_base bt2  ->
+      begin
         match bt1, bt2 with
           | Type_bool, _ -> Type_base bt2
           | Type_real, Type_bool -> Type_base bt1
@@ -87,7 +87,7 @@ let rec type_arithmetic_op str_op t1 t2 = match (t1, t2) with
 
 (* Environment *)
 
-let print_env env = 
+let print_env env =
   print_endline "== ENV ==";
   List.iter (fun (s,t) -> print_endline (s ^ " : " ^ string_of_t t)) env;
   print_endline "=========\n"
@@ -107,12 +107,12 @@ let find_in_env s env =
   with Not_found -> failwith ("No " ^ s ^ " in env")
 
 let get_assign_ident e = match e.exp_desc with
-  | Var var -> 
+  | Var var ->
       begin
         match var.var_desc with
           | ColonVar  -> failwith "Can't extract ident from COLONVAR"
           | DollarVar -> failwith "Can't extract ident from DOLLARVAR"
-          | SimpleVar symbol -> ScilabContext.symbol_name symbol
+          | SimpleVar symbol -> ScilabSymbol.symbol_name symbol
           | ArrayListVar arr -> failwith "Can't extract ident from ARRAYLISTVAR"
       end
   | FieldExp _ -> failwith "Can't extract ident from FielExp"
@@ -123,7 +123,7 @@ let get_assign_ident e = match e.exp_desc with
 exception Not_null
 
 let rec type_exp env e = match e.exp_desc with
-  | SeqExp list -> 
+  | SeqExp list ->
       List.fold_left (fun (typ,env) e -> type_exp env e) (Type_null, env) list
   | ConstExp exp -> type_const env exp
   | CallExp exp -> type_call env exp
@@ -133,7 +133,7 @@ let rec type_exp env e = match e.exp_desc with
       let ident = get_assign_ident assignExp_left_exp in
       (Type_null, add_in_env ident typ new_env)
   | ControlExp controlExp -> type_cntrl env controlExp
-  | Dec dec -> 
+  | Dec dec ->
       (* Update env with new dec *)
       (Type_null, env)
   | FieldExp { fieldExp_head; fieldExp_tail } -> (Type_null, env)
@@ -169,7 +169,7 @@ and type_cntrl env = function
 and type_var env v = match v.var_desc with
   | ColonVar  -> failwith "COLONVAR"
   | DollarVar -> failwith "DOLLARVAR"
-  | SimpleVar symbol -> (find_in_env (ScilabContext.symbol_name symbol) env, env)
+  | SimpleVar symbol -> (find_in_env (ScilabSymbol.symbol_name symbol) env, env)
   | ArrayListVar arr -> (Type_null, env)
 
 and type_math env = function
@@ -181,9 +181,9 @@ and type_math env = function
   | TransposeExp transposeExp -> (Type_null, env)
 
 (* elemts in matrix can change env !! *)
-and type_matrixExp env me = 
-  let arr_type = 
-    Array.map (fun line -> 
+and type_matrixExp env me =
+  let arr_type =
+    Array.map (fun line ->
       Array.map (fun e ->
         let (t, _) = type_exp env e in
         match t with
@@ -197,10 +197,10 @@ and type_matrixExp env me =
       get_stronger_type typ_ref typ_elm
     ) typ l
   ) fst_type arr_type
-  
+
 
 and type_opexp env op args = match op with
-  | OpExp_plus | OpExp_minus | OpExp_times 
+  | OpExp_plus | OpExp_minus | OpExp_times
   | OpExp_rdivide | OpExp_ldivide | OpExp_power ->
       let (t_left, nenv) = type_exp env args.opExp_left in
       let (t_right, new_env) = type_exp nenv args.opExp_right in
@@ -229,4 +229,4 @@ let type_ast e =
 
 
 
-  
+

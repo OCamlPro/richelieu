@@ -10,7 +10,7 @@
  *
  *)
 
-type t = ScilabContext.t
+type t = ScilabSymbol.t
 
 type binop =
   Unknown_oper (* first, because our C code starts with 1 for plus *)

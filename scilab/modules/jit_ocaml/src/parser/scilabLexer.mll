@@ -1,9 +1,9 @@
 {
- 
+
   open Lexing
   open ScilabParser
 
- 
+
   exception Err_str of string
 
   exception Lex_err of string
@@ -34,20 +34,20 @@
     Printf.printf "; curr_pos :%i \n" lexbuf.lex_curr_pos
 
   let return_token tok =
-    if !shellmode_on then shellmode_on := false; 
+    if !shellmode_on then shellmode_on := false;
     last_token := tok;
     tok
 
   let return_id tok =
     last_token := tok;
-    tok 
+    tok
 
   let return_control lexbuf =
     lexbuf.lex_curr_p <- { lexbuf.lex_curr_p with
       pos_cnum = lexbuf.lex_curr_p.pos_cnum - 1 };
     lexbuf.lex_curr_pos <- lexbuf.lex_curr_pos - 1
 
-  let return_shell tok = 
+  let return_shell tok =
     last_token := tok;
     shellmode_on := false;
     tok
@@ -81,18 +81,18 @@
     if (in_matrix () & (!last_token = COMMA || !last_token = PLUS)) ||
        (!last_token = EOL  || !last_token = SOF)
     then ()
-    else 
+    else
       last_token := SPACES
       (* if !matrix_level = 0  *)
       (* then last_token := EOF *)
       (* else () *)
-        
+
   let make_error_string lexbuf =
     let curr = lexbuf.Lexing.lex_curr_p in
     let line = "at line " ^ (string_of_int curr.Lexing.pos_lnum) in
     let cnum = ", chararacter " ^ (string_of_int (curr.Lexing.pos_cnum - curr.Lexing.pos_bol - 1)) in
     line ^ cnum ^ "."^(!str)
-    
+
 
  let newline_lex lexbuf =
     let pos = lexbuf.lex_curr_p in
@@ -108,15 +108,20 @@
   (** xd-y -> xe-y
       xD-y -> xe-y **)
   let convert_scientific_notation str =
-    let regexp = Str.regexp "['d''D']" in
-    Str.global_replace regexp "e" str
+    let s = String.copy str in
+    for i = 0 to String.length s - 1 do
+      match s.[i] with
+      'd' | 'D' -> s.[i] <- 'e'
+      | _ -> ()
+    done;
+    s
 
   let warning_only_scila5 msg lexbuf =
     let curr = lexbuf.Lexing.lex_curr_p in
     let line = curr.Lexing.pos_lnum in
     let cnum = (curr.Lexing.pos_cnum - curr.Lexing.pos_bol - 1) in
-    Printf.printf "Warning : %s at line %i, character %i." msg line cnum 
-      
+    Printf.printf "Warning : %s at line %i, character %i." msg line cnum
+
 
 (* Convertion to UTF32LE *)
   let unicode_to_utf32le u =
@@ -130,16 +135,16 @@
     utf32.[2] <- Char.chr c1;
     utf32.[3] <- Char.chr c0;
     utf32
-      
-  let utf_8_normalize s = 
+
+  let utf_8_normalize s =
     let b = Buffer.create (String.length s * 3) in
     (* let n = Uunf.create nf in *)
-    let rec add v = match (* Uunf.add n *) v with 
-      | `Uchar u -> Buffer.add_string b (unicode_to_utf32le u); add `Await 
+    let rec add v = match (* Uunf.add n *) v with
+      | `Uchar u -> Buffer.add_string b (unicode_to_utf32le u); add `Await
       | _ -> ()
     in
-    let add_uchar _ _ = function 
-      | `Malformed _ -> add (`Uchar Uutf.u_rep) 
+    let add_uchar _ _ = function
+      | `Malformed _ -> add (`Uchar Uutf.u_rep)
       | `Uchar c as u -> add u
     in
     Uutf.String.fold_utf_8 add_uchar () s; add `End; Buffer.contents b
@@ -253,7 +258,7 @@ let assign = "="
 
 rule token = parse
   | spaces                       { set_last_token_spaces ();
-                                   if !shellmode_on 
+                                   if !shellmode_on
                                    then shellmode lexbuf
                                    else token lexbuf }
   | blankline                    { newline_lex lexbuf;
@@ -270,7 +275,7 @@ rule token = parse
   | startblockcomment            { str_cmt := ""; commentblock lexbuf }
   | dquote                       { str := ""; doublestr lexbuf }
   | quote                        { if (is_transposable ())
-                                   then return_token QUOTE 
+                                   then return_token QUOTE
                                    else begin str := ""; simplestr lexbuf end }
   | "if"                         { if not (in_matrix ())
                                    then return_token IF
@@ -358,7 +363,7 @@ rule token = parse
   | controlrdivide               { return_control lexbuf; return_token CONTROLRDIVIDE }
   | kronrdivide                  { return_token KRONRDIVIDE }
   | ldivide                      { return_token LDIVIDE }
-  | dotldivide                   { return_token DOTLDIVIDE }  
+  | dotldivide                   { return_token DOTLDIVIDE }
   | controlldivide               { return_control lexbuf; return_token CONTROLLDIVIDE }
   | kronldivide                  { return_token KRONLDIVIDE }
   | times                        { return_token TIMES }
@@ -461,7 +466,7 @@ and simplestr = parse
   | eof                          { raise (Err_str "Error : unexpected end of file in a string ") }
   | utf as u                     { str := !str ^ u; simplestr lexbuf }
   | _ as c                       { str := !str^(Char.escaped c); simplestr lexbuf }
-      
+
 and shellmode = parse
   | spaces+                      { shellmode lexbuf }
   | startlinecomment             { shellmode_on := false;
@@ -473,7 +478,7 @@ and shellmode = parse
   | controlrdivide               { return_control lexbuf; return_shell CONTROLRDIVIDE }
   | kronrdivide                  { return_shell KRONRDIVIDE }
   | ldivide                      { return_shell LDIVIDE }
-  | dotldivide                   { return_shell DOTLDIVIDE }  
+  | dotldivide                   { return_shell DOTLDIVIDE }
   | controlldivide               { return_control lexbuf; return_shell CONTROLLDIVIDE }
   | kronldivide                  { return_shell KRONLDIVIDE }
   | times                        { return_shell TIMES }
@@ -499,9 +504,9 @@ and shellmode = parse
   | boolandand                   { return_shell ANDAND }
   | boolor                       { return_shell OR }
   | booloror                     { return_shell OROR }
-  | quote                        { shellmode_on := false; 
+  | quote                        { shellmode_on := false;
                                    if (is_transposable ())
-                                   then return_shell QUOTE 
+                                   then return_shell QUOTE
                                    else begin str := ""; simplestr lexbuf end }
   | dquote                       { shellmode_on := false; str := ""; doublestr lexbuf }
   | shellmode_arg as arg         { return_token (STR arg) }

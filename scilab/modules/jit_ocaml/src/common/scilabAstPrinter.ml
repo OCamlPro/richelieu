@@ -11,7 +11,7 @@
  *)
 
 open ScilabAst
-open ScilabContext (* for symbol *)
+open ScilabSymbol (* for symbol *)
 
 let string_of_opExp_Kind  = function
   OpExp_invalid_kind -> "OpExp_invalid_kind"

@@ -28,11 +28,11 @@ module Location = struct
 
 end
 
-(* Now, we use ScilabContext.symbol instead of Symbol.t
+(* Now, we use ScilabSymbol.symbol instead of Symbol.t
 module Symbol = struct
   type t = {
     symbol_name : string;
-    symbol_binding : ScilabContext.binding;
+    symbol_binding : ScilabSymbol.binding;
   }
 end
 *)
@@ -64,7 +64,7 @@ and dec =
 | FunctionDec of functionDec
 
 and varDec = {
-  varDec_name : ScilabContext.symbol;
+  varDec_name : ScilabSymbol.symbol;
   varDec_init : exp;
   varDec_kind : varDec_Kind;
 }
@@ -76,7 +76,7 @@ and varDec_Kind =
 
 and functionDec =  {
   functionDec_location : Location.t;
-  functionDec_symbol : ScilabContext.symbol;
+  functionDec_symbol : ScilabSymbol.symbol;
   functionDec_args : arrayListVar;
   functionDec_returns : arrayListVar;
   functionDec_body : exp;
@@ -371,7 +371,7 @@ and var = {
 and var_desc =
 | ColonVar  (* a ; *)
 | DollarVar (* a $ *)
-| SimpleVar of ScilabContext.symbol
+| SimpleVar of ScilabSymbol.symbol
 | ArrayListVar of var array  (* should never occur, automatically encoded
     in functionDec *)
 

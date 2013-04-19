@@ -38,7 +38,7 @@ type action =
 type return =
   ReturnNotExec (* not executed *)
 | ReturnError of string
-| ReturnValues of ScilabContext.t array
+| ReturnValues of ScilabSymbol.t array
 
 external jit_ocaml_register_callback_ml :
   (ScilabString2Ast.wstring -> action -> int -> return) -> unit =
@@ -76,7 +76,7 @@ let _ =
         (* 3. execute the code *)
         (*
           Printf.fprintf stderr "Context before:\n%s%!"
-          (ScilabContext.to_string ());
+          (ScilabSymbol.to_string ());
         *)
         if exec_ast then
           try
@@ -97,7 +97,7 @@ let _ =
                            "jit_ocaml - exception during exec: %s" s)
       (*
         Printf.fprintf stderr "Context after:\n%s%!"
-        (ScilabContext.to_string ());
+        (ScilabSymbol.to_string ());
       *)
         else begin
           if verbose then
