@@ -128,15 +128,17 @@ OCAML_MLIS = \
 OCAML_PARSER_MLS = \
 	src/ocaml/scilabContext.ml \
 	src/ocaml/scilabAst.ml \
-	src/ocaml/scilabAstStats.ml \
 	src/ocaml/scilabString2Ast.ml \
-	src/ocaml/scilabPrettyPrinter.ml \
 	src/ocaml/scilabPreParser.ml \
 	src/ocaml/scilabAstPrinter.ml \
+	src/ocaml/scilabPrettyPrinter.ml \
 	src/ocaml/scilabMisc.ml \
 	src/ocaml/scilabUtils.ml \
 	src/yacc/scilabParser.ml \
 	src/lex/scilabLexer.ml \
+	src/ocaml/scilabDeffRefactoring.ml \
+	src/ocaml/scilabTyper.ml \
+	src/ocaml/scilabAstStats.ml \
 	src/ocaml/scilabParserMain.ml
 
 OCAML_PARSER_CMXS = $(OCAML_PARSER_MLS:.ml=.cmx)
