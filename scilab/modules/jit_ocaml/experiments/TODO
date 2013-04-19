@@ -1,0 +1,117 @@
+- float :
+  - infinity -> pretty print une valeur suffisament grande
+  - pour tester l'egalité on test la version string pcq apres pretty print on 
+    a perdu de la precision
+
+- While Else : il a fallu aplatir les seqexp qui pouvaient contenir des seqexp
+
+
+
+execstr :
+- instr + errcatch : spilu/demos/ilud_searchForMatrix.sce
+- variable : act/Scilab/simstab.sce
+             metanet/macros/graph_tools/show_graph.sci
+             metanet/macros/graph_tools/old_edit_graph.sci
+             metanet/macros/graph_tools/netclose.sci
+             metanet/macros/graph_tools/metanet_module_path.sci
+             metanet/macros/graph_tools/unhilite_edges.sci
+             metanet/macros/editor/ge_graph.sci
+             metanet/macros/editor/ge_record.sci
+             metanet/macros/editor/ge_clear_history.sci
+             metanet/macros/editor/ge_do_add_node_data.sci
+             cpge/macros/Param_Temp_pre_simulate.sci
+             cpge/macros/Param_Var_pre_simulate.sci
+             dnims/macros/!_deff_wrapper.sci
+- fun call : metanet/macros/editor/ge_play.sci
+             
+
+deff :
+- name + list instr : nan-toolbox/tests/unit_tests/nan_linkage.tst
+- variable : module-lycee/macros/activites/newdata_aire.sci
+             scimax/macros/maxfun/createmaxfun.sci
+             old-tests/automatic_tests/varargin.tst
+
+typeur :
+
+1/ Étudier l'usage des identifiants de variables :
+  1.1/ Combien de noms de fonctions sont uniques (% du nombre de fonctions
+          totales). Quelle incidence a la longueur du nom ? Par "unique",
+          j'entends qu'il n'existe aucune autre valeur (fonction ou pas)
+          ayant le même identifiant.
+  1.2/ Pour les appels de fonction, quel % des appels sont sur des noms
+       uniques ? Quel % ne peut pas être devinés par cette technique ?
+  1.3/ Combien de fonctions redéfinissent des primitives du langage ?
+  1.4/ D'une façon générale, pour chaque identifiant:
+        - combien de fois il sert à définir une fonction
+        - combien de fois un appel de fonction est fait à travers lui
+        - combien de fois il sert à définir autre chose qu'une fonction
+  1.5/ Les identifiants obéissent-ils souvent à un scope lexical ?
+        - quel % est initialisé dans la fonction avant usage
+        - quel % n'est pas initialisé dans la fonction avant usage
+            (quel % a un nom unique ? en gros, quand un développeur
+             veut partager une variable entre plusieurs fonctions,
+             fait-il en sorte que le nom soit unique ?)
+
+2/ Utilisation de constructions du langage :
+ 2.1/ Combien de fonctions font usage de "vars = resume(values)" ou
+        "vars = return(values)"
+ 2.2/ Combien de fonctions utilisent des arguments spéciaux, i.e.
+     utilisent les variables "nargin", "nargout", "varargin", "varargout"
+     (les distinguer)
+ 2.3/ La fonction "deff" est-elle souvent utilisée ? Comment :
+   2.3.1/ % de fois où tous les arguments sont des chaînes constantes
+       "deff("...", "...")
+   2.3.2/ nombre d'autres cas
+ 2.4/ L'utilisation de labels dans les arguments est-il courant ?
+
+- fonction critique :
+  -> deff (argument string constant ? addition de string ?)
+  -> execstr
+
+
+//Double
+AddDoubleToDouble : real -> real -> real
+
+//Poly
+AddDoubleToPoly : poly -> double -> poly
+AddPolyToPoly : poly -> poly -> poly
+
+//String
+AddStringToString : string -> string -> string
+
+//Sparse
+AddSparseToSparse : sparse -> sparse -> sparse
+AddSparseToDouble : sparse -> double -> sparse
+AddDoubleToSparse : double -> sparse -> sparse
+
+//Matrix
+iAddRealScalarToRealMatrix : double -> double list -> int -> int -> double list
+// real -> matrix -> dim1 -> dim2 -> res
+
+iAddRealScalarToComplexMatrix : double -> double list -> double list -> int -> int -> double list -> double list
+// real -> real part matrix -> img part matrix -> dim1 -> dim2 -> real part res -> img part res
+
+iAddComplexScalarToRealMatrix : double -> double -> double list -> double list -> int -> int -> double list -> double list
+// real part -> img part -> real part matrix -> img part matrix -> dim1 -> dim2 -> real part res -> img part res
+iAddComplexScalarToComplexMatrix
+//
+iAddRealMatrixToRealMatrix
+//
+iAddRealMatrixToComplexMatrix
+//
+iAddComplexMatrixToComplexMatrix
+//
+iAddRealIdentityToRealMatrix
+//
+iAddRealIdentityToComplexMatrix
+//
+iAddComplexIdentityToRealMatrix
+//
+iAddComplexIdentityToComplexMatrix
+//
+
+iAddRealPolyToRealPoly
+
+iAddRealPolyToComplexPoly
+
+iAddComplexPolyToComplexPoly
