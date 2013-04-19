@@ -241,7 +241,7 @@ and pprint_array buf indent arr =
 and pprint_var buf indent var = match var.var_desc with
   | ColonVar -> Printf.bprintf buf "%s:" indent
   | DollarVar -> Printf.bprintf buf "%s$" indent
-  | SimpleVar v -> Printf.bprintf buf "%s%s" indent (ScilabContext.symbol_name v)
+  | SimpleVar v -> Printf.bprintf buf "%s%S" indent (ScilabAstPrinter.string_of_unicode (ScilabContext.symbol_name v))
   | ArrayListVar var_array -> 
       let length = Array.length var_array in
       Printf.bprintf buf "[";

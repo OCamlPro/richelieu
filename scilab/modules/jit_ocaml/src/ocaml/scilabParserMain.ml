@@ -1,9 +1,13 @@
 let file = ref ""
 let test_flag = ref false
 let equal_flag = ref false
+let analyze_flag = ref false
+let type_flag = ref false
 let args = [("-t", Arg.Unit (fun () -> test_flag := true), ": run tests");
-            ("-eq", Arg.String (fun s -> equal_flag := true;file := s), ": test c++/ocaml ast, file is in intermediate format")]
-let usage = "Usage: " ^ Sys.argv.(0) ^ " [-t] [-eq file] [file]"
+            ("-eq", Arg.String (fun s -> equal_flag := true; file := s), ": test c++/ocaml ast, file is in intermediate format");
+            ("-a", Arg.String (fun s -> analyze_flag := true; file := s), ": analyze scilab source code");
+            ("-typ", Arg.String (fun s -> type_flag := true; file := s), ": try to type a scilab programe")]
+let usage = "Usage: " ^ Sys.argv.(0) ^ " [-t] [-eq file] [-analyze file] [file]"
 
 (* let test_parser ast = *)
 (*   (\* ast -> binary format *\) *)
@@ -21,21 +25,37 @@ let scilab6_test_path = "/home/michael/scilab.6/scilab/test/"
 
 let richelieu_test_path = "/home/michael/dev_sci/richelieu/"
 
+let scilab_forge_test_path = "/home/michael/test_forge/mirror.forge.scilab.org-1.4GB/"
+
 let print_exn_infos =
   Printf.printf "Error at token : %s (line %i, character %i) \n\n"
 
 let print_lex_infos =
   Printf.printf "at token : %s (line %i, character %i) \n\n"
 
+let get_length ic =
+  let buf = Buffer.create 4 in
+  Buffer.add_channel buf ic 4;
+  let s = Buffer.contents buf in
+  let c0 = int_of_char (String.unsafe_get s 0) in
+  let c1 = int_of_char (String.unsafe_get s 1) in
+  let c2 = int_of_char (String.unsafe_get s 2) in
+  let c3 = int_of_char (String.unsafe_get s 3) in
+  c0 + ((c1 + ((c2 + (c3 lsl 8)) lsl 8)) lsl 8)
 
 let equal_test file = 
     if List.exists (Filename.check_suffix file) list_ext_bin
     then
       let ch = open_in file in
-      let s = input_line ch in
-      (* let ast1 = ScilabString2Ast.ast_of_string s in *)
+      let len = get_length ch in
+      close_in ch;
+      let ch = open_in file in
+      let buf = Buffer.create len in
+      Buffer.add_channel buf ch len;
+      let s = Buffer.contents buf in
+      let ast1 = ScilabString2Ast.ast_of_string s in
       Printf.printf "AST from SCILAB : \n";
-      (* print_endline (ScilabAstPrinter.to_string ast1) *)
+      print_endline (ScilabAstPrinter.to_string ast1);
       let file = Filename.chop_suffix file ".bin" in
       let ch = open_in file in
       let new_prog = ScilabPreParser.pre_parse ch in
@@ -46,8 +66,11 @@ let equal_test file =
         let ast = ScilabParser.program ScilabLexer.token lexbuf in
         begin
           match ast with
-            | ScilabAst.Exp exp ->  print_endline (ScilabAstPrinter.to_string exp)
-            | _ -> ()
+            | ScilabAst.Exp exp ->  
+                print_endline (ScilabAstPrinter.to_string exp);
+                if ScilabUtils.is_equal (ScilabAst.Exp ast1) ast
+                then print_endline "-> eqOK\n"
+            | _ -> failwith "shouldn't happen"
         end;
         flush stdout;
         close_in ch
@@ -81,14 +104,10 @@ let equal_test file =
         | _ as err -> raise err
     else Printf.printf "Wrong extension"
 
-let run_test file =
+let run_deff file =
   let ch = if file = "" then stdin else open_in file in
-  (* Printf.printf "Pre-parsing %s : \n" file; *)
   let new_prog = ScilabPreParser.pre_parse ch in
-  (* Printf.printf "%s \n" new_prog; *)
-  (* Printf.printf "==================\n"; *)
   Printf.printf "Testing %s : " file;
-  (* let lexbuf = Lexing.from_channel ch in *)
   let lexbuf = Lexing.from_string new_prog in
   ScilabLexer.init_lexer_var ();
   try
@@ -96,28 +115,8 @@ let run_test file =
     begin
       match ast with
         | ScilabAst.Exp exp -> 
-            (* print_endline (ScilabAstPrinter.to_string exp); *)
             print_endline "-> OK\n";
-            let pp_prog = ScilabPrettyPrinter.pprint_ast exp in
-            (* print_endline pp_prog; *)
-            let pp_lexbuf = Lexing.from_string pp_prog in
-            ScilabLexer.init_lexer_var ();
-            let pp_ast = ScilabParser.program ScilabLexer.token pp_lexbuf in
-            begin
-              match pp_ast with
-                | ScilabAst.Exp exp -> 
-                    print_endline (ScilabAstPrinter.to_string exp);
-                    print_endline "-> ppOK\n";
-                    if ScilabUtils.is_equal ast pp_ast
-                    then print_endline "-> eqOK\n"
-                | _ -> print_endline "-> Error not an Exp\n"
-            end
-
-            (* let n = !ScilabAstStats.node_visited in *)
-            (* ScilabAstStats.analyze_ast exp; *)
-            (* ScilabAstStats.print_stats(); *)
-            (* let curr = lexbuf.Lexing.lex_curr_p in *)
-            (* Printf.printf "node = %i; ligne = %i; rapport = %f" (!ScilabAstStats.node_visited - n) curr.Lexing.pos_lnum ((float (!ScilabAstStats.node_visited - n))/.(float curr.Lexing.pos_lnum)); *)
+            ScilabDeffRefactoring.refactor_deff exp
         | _ -> print_endline "-> Error not an Exp\n"
     end;
     flush stdout;
@@ -151,223 +150,204 @@ let run_test file =
         close_in ch
     | _ as err -> raise err 
 
-let run_tests dirname =
+
+let run_test file =
+  let ch = if file = "" then stdin else open_in file in
+  let new_prog = ScilabPreParser.pre_parse ch in
+  Printf.printf "Testing %s : " file;
+  let lexbuf = Lexing.from_string new_prog in
+  ScilabLexer.init_lexer_var ();
+  try
+    let ast = ScilabParser.program ScilabLexer.token lexbuf in
+    begin
+      match ast with
+        | ScilabAst.Exp exp -> print_endline "-> OK\n"
+        | _ -> print_endline "-> Error not an Exp\n"
+    end;
+    flush stdout;
+    close_in ch
+  with 
+    | Parsing.Parse_error ->
+        let curr = lexbuf.Lexing.lex_curr_p in
+        let line = curr.Lexing.pos_lnum in
+        let cnum = curr.Lexing.pos_cnum - curr.Lexing.pos_bol - 1 in
+        let tok = Lexing.lexeme lexbuf in
+        print_exn_infos tok line cnum;
+        flush stdout;
+        close_in ch
+    | ScilabLexer.Err_str str_err ->
+        let curr = lexbuf.Lexing.lex_curr_p in
+        let line = curr.Lexing.pos_lnum in
+        let cnum = curr.Lexing.pos_cnum - curr.Lexing.pos_bol - 1 in
+        let tok = Lexing.lexeme lexbuf in
+        print_string str_err;
+        print_lex_infos tok line cnum;
+        flush stdout;
+        close_in ch
+    | ScilabLexer.Lex_err str_lex ->
+        let curr = lexbuf.Lexing.lex_curr_p in
+        let line = curr.Lexing.pos_lnum in
+        let cnum = curr.Lexing.pos_cnum - curr.Lexing.pos_bol - 1 in
+        let tok = Lexing.lexeme lexbuf in
+        print_string str_lex;
+        print_lex_infos tok line cnum;
+        flush stdout;
+        close_in ch
+    | _ as err -> raise err 
+
+let run_type_file file =
+  let ch = if file = "" then stdin else open_in file in
+  let new_prog = ScilabPreParser.pre_parse ch in
+  Printf.printf "Typing %s : " file;
+  let lexbuf = Lexing.from_string new_prog in
+  ScilabLexer.init_lexer_var ();
+  try
+    let ast = ScilabParser.program ScilabLexer.token lexbuf in
+    begin
+      match ast with
+        | ScilabAst.Exp exp -> 
+            print_endline "-> OK\n";
+            print_endline (ScilabAstPrinter.to_string exp);
+            ScilabTyper.type_ast exp
+        | _ -> print_endline "-> Error not an Exp\n"
+    end;
+    flush stdout;
+    close_in ch
+  with 
+    | Parsing.Parse_error ->
+        let curr = lexbuf.Lexing.lex_curr_p in
+        let line = curr.Lexing.pos_lnum in
+        let cnum = curr.Lexing.pos_cnum - curr.Lexing.pos_bol - 1 in
+        let tok = Lexing.lexeme lexbuf in
+        print_exn_infos tok line cnum;
+        flush stdout;
+        close_in ch
+    | ScilabLexer.Err_str str_err ->
+        let curr = lexbuf.Lexing.lex_curr_p in
+        let line = curr.Lexing.pos_lnum in
+        let cnum = curr.Lexing.pos_cnum - curr.Lexing.pos_bol - 1 in
+        let tok = Lexing.lexeme lexbuf in
+        print_string str_err;
+        print_lex_infos tok line cnum;
+        flush stdout;
+        close_in ch
+    | ScilabLexer.Lex_err str_lex ->
+        let curr = lexbuf.Lexing.lex_curr_p in
+        let line = curr.Lexing.pos_lnum in
+        let cnum = curr.Lexing.pos_cnum - curr.Lexing.pos_bol - 1 in
+        let tok = Lexing.lexeme lexbuf in
+        print_string str_lex;
+        print_lex_infos tok line cnum;
+        flush stdout;
+        close_in ch
+    | _ as err -> raise err 
+
+let run_analyze_file file =
+  let ch = if file = "" then stdin else open_in file in
+  let new_prog = ScilabPreParser.pre_parse ch in
+  Printf.printf "Analyzing %s : " file;
+  let lexbuf = Lexing.from_string new_prog in
+  ScilabLexer.init_lexer_var ();
+  try
+    let ast = ScilabParser.program ScilabLexer.token lexbuf in
+    begin
+      match ast with
+        | ScilabAst.Exp exp -> 
+            print_endline "-> OK\n";
+            ScilabAstStats.analyze_ast exp
+        | _ -> print_endline "-> Error not an Exp\n"
+    end;
+    flush stdout;
+    close_in ch
+  with 
+    | Parsing.Parse_error ->
+        let curr = lexbuf.Lexing.lex_curr_p in
+        let line = curr.Lexing.pos_lnum in
+        let cnum = curr.Lexing.pos_cnum - curr.Lexing.pos_bol - 1 in
+        let tok = Lexing.lexeme lexbuf in
+        print_exn_infos tok line cnum;
+        flush stdout;
+        close_in ch
+    | ScilabLexer.Err_str str_err ->
+        let curr = lexbuf.Lexing.lex_curr_p in
+        let line = curr.Lexing.pos_lnum in
+        let cnum = curr.Lexing.pos_cnum - curr.Lexing.pos_bol - 1 in
+        let tok = Lexing.lexeme lexbuf in
+        print_string str_err;
+        print_lex_infos tok line cnum;
+        flush stdout;
+        close_in ch
+    | ScilabLexer.Lex_err str_lex ->
+        let curr = lexbuf.Lexing.lex_curr_p in
+        let line = curr.Lexing.pos_lnum in
+        let cnum = curr.Lexing.pos_cnum - curr.Lexing.pos_bol - 1 in
+        let tok = Lexing.lexeme lexbuf in
+        print_string str_lex;
+        print_lex_infos tok line cnum;
+        flush stdout;
+        close_in ch
+    | _ as err -> raise err 
+
+let rec run_tests fun_iter dirname =
   let files = Sys.readdir dirname in
-  Printf.printf "# tests to run in %s : %i\n\n" dirname (Array.length files);
+  (* Printf.printf "# tests to run in %s : %i\n\n" dirname (Array.length files); *)
   Array.iter (fun file ->
-    let file = Filename.concat dirname file in
-    if List.exists (Filename.check_suffix file) list_ext then
-      run_test file
+    try
+      let file = Filename.concat dirname file in
+      if Sys.is_directory file then run_tests fun_iter file;
+      if List.exists (Filename.check_suffix file) list_ext then
+        begin
+          fun_iter file
+          (* printf.printf "%s \n" dirname *)
+        end
+    with _ -> ()
   ) files
 
 let _ =
-  Arg.parse args (fun s ->  run_test s) usage;
+  Arg.parse args (fun s ->  run_deff s) usage;
   if !test_flag
   then
     begin
       let dir_tests =
         [ (* My tests *)
-          "test/";
-          
-          (* scilab 5' tests *)
-          (* scilab5_modules_path ^ "action_binding/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "api_scilab/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "api_scilab/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "arnoldi/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "arnoldi/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "atoms/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "atoms/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "boolean/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "boolean/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "cacsd/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "cacsd/tests/nonreg_tests"; *)
-          
-          (*  (\* C code ?! *\) *)
-          (*  (\* scilab5_modules_path ^ "call_scilab/tests/nonreg_tests"; *\) *)
-          
-          (* scilab5_modules_path ^ "compatibility_functions/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "compatibility_functions/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "completion/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "completion/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "console/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "console/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "core/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "core/tests/nonreg_tests"; *)
-          (* scilab5_modules_path ^ "core/tests/benchmarks"; *)
-          
-          (* scilab5_modules_path ^ "data_structures/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "data_structures/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "demo_tools/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "demo_tools/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "development_tools/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "development_tools/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "differential_equations/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "differential_equations/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "dynamic_link/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "dynamic_link/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "elementary_functions/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "elementary_functions/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "fftw/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "fftw/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "fileio/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "fileio/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "functions/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "functions/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "genetic_algorithms/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "genetic_algorithms/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "graphic_export/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "graphic_export/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "graphic_objects/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "graphic_objects/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "graphics/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "graphics/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "gui/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "gui/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "hdf5/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "hdf5/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "helptools/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "helptools/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "history_manager/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "history_manager/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "integer/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "integer/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "interpolation/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "interpolation/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "io/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "io/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "jvm/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "jvm/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "linear_algebra/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "linear_algebra/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "localization/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "localization/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "m2sci/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "m2sci/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "matio/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "matio/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "optimization/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "optimization/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "output_stream/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "output_stream/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "overloading/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "overloading/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "parallel/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "parallel/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "parameters/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "parameters/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "polynomials/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "polynomials/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "randlib/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "randlib/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "scicos_blocks/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "scicos_blocks/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "scinotes/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "scinotes/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "signal_processing/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "signal_processing/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "sound/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "sound/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "sparse/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "sparse/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "special_functions/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "special_functions/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "spreadsheet/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "spreadsheet/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "statistics/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "statistics/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "string/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "string/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "tclsci/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "tclsci/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "time/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "time/tests/nonreg_tests"; *)
-          
-          
-          (* scilab5_modules_path ^ "ui_data/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "ui_data/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "umfpack/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "umfpack/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "windows_tools/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "windows_tools/tests/nonreg_tests"; *)
-          
-          (* scilab5_modules_path ^ "xml/tests/unit_tests"; *)
-          (* scilab5_modules_path ^ "xml/tests/nonreg_tests"; *)
-          
+          (* "test/"; *)
 
           (* Scilab 6' tests *)
-          (* scilab6_test_path ^ "good/"; *)
-          (* scilab6_test_path ^ "control/"; *)
-          (* scilab6_test_path ^ "exec/OpExp/"; *)
-          (* scilab6_test_path ^ "goodDelayed/"; *)
-          (* scilab6_test_path ^ "syntax/"; *)
-          (* scilab6_test_path ^ "bad/"; *)
+          (* scilab6_test_path*)
+
+          (* Scilab 5' tests *)
+          (* scilab5_modules_path*)
           
           (* Richelieu' tests *)
-          (* richelieu_test_path ^ "code_samples/declarations/"; *)
-          (* richelieu_test_path ^ "code_samples/scoping/"; *)
-          (* richelieu_test_path ^ "code_samples/slow_code/"; *)
-          (* richelieu_test_path ^ "code_samples/trick/"; *)
+          (* richelieu_test_path *)
+          
+          (* Scilab forge *)
+          scilab_forge_test_path
 
-           (* "/home/michael/git_scilab/richelieu/scilab/modules/jit_ocaml/test_stats" *)
+         (* "/home/michael/git_scilab/richelieu/scilab/modules/jit_ocaml/test_stats" *)
          ] in
-        List.iter (run_tests) dir_tests;
-        (* ScilabAstStats.print_stats () *)
+        List.iter (run_tests run_analyze_file) dir_tests;
+        (* ScilabAstStats.print_stats_id () *)
     end
   else
     if !equal_flag
     then equal_test !file
+    else
+      if !analyze_flag
+      then run_analyze_file !file
+      else
+        if !type_flag
+        then run_type_file !file
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -405,7 +405,7 @@ rule token = parse
   | booloror                     { return_token OROR }
   | id as ident                  { if (not (in_matrix ())) & (is_EOL () || is_SOF ())
                                    then shellmode_on := true;
-                                   let id8 = utf_8_normalize ident in
+                                   let id8 = (* utf_8_normalize *) ident in
                                    return_id (ID id8)
                                    (* (\*shellmode lexbuf*\) *)
                                    (*   else return_token (ID ident) *)
