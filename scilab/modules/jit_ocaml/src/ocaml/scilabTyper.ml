@@ -31,13 +31,13 @@ let rec string_of_t = function
   | Type_unknow -> "Type_unknow"
 
 let string_of_opExp_Oper = function
-  | OpExp_plus -> " OpExp_plus "
-  | OpExp_minus -> " OpExp_minus "
-  | OpExp_times -> " OpExp_times "
-  | OpExp_rdivide -> " OpExp_rdivide "
-  | OpExp_ldivide -> " OpExp_ldivide "
-  | OpExp_power -> " OpExp_power "
-  | OpExp_unaryMinus -> " OpExp_unaryMinus "
+  | OpExp_plus -> " + "
+  | OpExp_minus -> " - "
+  | OpExp_times -> " * "
+  | OpExp_rdivide -> " / "
+  | OpExp_ldivide -> " \\ "
+  | OpExp_power -> " ^ "
+  | OpExp_unaryMinus -> " - "
   | OpExp_dottimes -> " OpExp_dottimes "
   | OpExp_dotrdivide -> " OpExp_dotrdivide "
   | OpExp_dotldivide -> " OpExp_dotldivide "
@@ -48,12 +48,12 @@ let string_of_opExp_Oper = function
   | OpExp_controltimes -> " OpExp_controltimes "
   | OpExp_controlrdivide -> " OpExp_controlrdivide "
   | OpExp_controlldivide -> " OpExp_controlldivide "
-  | OpExp_eq -> " OpExp_eq "
-  | OpExp_ne -> " OpExp_ne "
-  | OpExp_lt -> " OpExp_lt "
-  | OpExp_le -> " OpExp_le "
-  | OpExp_gt -> " OpExp_gt "
-  | OpExp_ge -> " OpExp_ge "
+  | OpExp_eq -> " = "
+  | OpExp_ne -> " ~= "
+  | OpExp_lt -> " < "
+  | OpExp_le -> " <= "
+  | OpExp_gt -> " > "
+  | OpExp_ge -> " >= "
 
 let rec get_stronger_type t1 t2 = match (t1, t2) with
   | Type_base bt1, Type_base bt2  -> 
@@ -79,11 +79,27 @@ let rec type_arithmetic_op str_op t1 t2 = match (t1, t2) with
           | Type_real, Type_complex -> Type_base bt2
           | Type_complex, _ -> Type_base bt1
       end
-  | Type_matrix mt1, Type_base bt2 -> type_arithmetic_op str_op mt1 t2
-  | Type_base bt1, Type_matrix mt2 -> type_arithmetic_op str_op t1 mt2
-  | Type_matrix mt1, Type_matrix mt2 -> type_arithmetic_op str_op mt1 mt2
+  | Type_matrix mt1, Type_base bt2 -> Type_matrix (type_arithmetic_op str_op mt1 t2)
+  | Type_base bt1, Type_matrix mt2 -> Type_matrix (type_arithmetic_op str_op t1 mt2)
+  | Type_matrix mt1, Type_matrix mt2 -> Type_matrix (type_arithmetic_op str_op mt1 mt2)
   | Type_string, Type_string -> Type_string
   | _, _ -> failwith ("Can't type " ^ string_of_t t1 ^ str_op ^ string_of_t t2)
+
+let rec type_compare_op str_op t1 t2 = match (t1, t2) with
+  | Type_base bt1, Type_base bt2  -> 
+      begin 
+        match bt1, bt2 with
+          | Type_real, Type_real -> Type_base Type_bool
+          | _, _ -> failwith ("Can't type " ^ string_of_t t1 ^ str_op ^ string_of_t t2)
+      end
+  | Type_matrix mt1, Type_base bt2 -> type_compare_op str_op mt1 t2
+  | Type_base bt1, Type_matrix mt2 -> type_compare_op str_op t1 mt2
+  | Type_matrix mt1, Type_matrix mt2 -> type_compare_op str_op mt1 mt2
+  | _, _ -> failwith ("Can't type " ^ string_of_t t1 ^ str_op ^ string_of_t t2)
+
+let type_unary_minus t1 = match t1 with
+  | Type_base _ | Type_matrix _ -> t1
+  | _ -> failwith ("Can't type unary minus for " ^ string_of_t t1)
 
 (* Environment *)
 
@@ -198,14 +214,23 @@ and type_matrixExp env me =
     ) typ l
   ) fst_type arr_type
   
-
 and type_opexp env op args = match op with
   | OpExp_plus | OpExp_minus | OpExp_times 
   | OpExp_rdivide | OpExp_ldivide | OpExp_power ->
       let (t_left, nenv) = type_exp env args.opExp_left in
       let (t_right, new_env) = type_exp nenv args.opExp_right in
-      print_env new_env;
+      (* print_env new_env; *)
       (type_arithmetic_op (string_of_opExp_Oper op) t_left t_right, new_env)
+  (* unaryMinus have a dump expression as left operand *)
+  | OpExp_unaryMinus -> 
+      let (t_right, new_env) = type_exp env args.opExp_right in 
+      (type_unary_minus t_right, new_env)
+  | OpExp_eq | OpExp_ne | OpExp_lt 
+  | OpExp_le | OpExp_gt | OpExp_ge ->
+      let (t_left, nenv) = type_exp env args.opExp_left in
+      let (t_right, new_env) = type_exp nenv args.opExp_right in
+      print_env new_env;
+      (type_compare_op (string_of_opExp_Oper op) t_left t_right, new_env)
   | _ -> failwith "OpExp TODO"
 
 let type_ast e =
