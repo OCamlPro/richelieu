@@ -33,49 +33,7 @@ Where the context is also used in Scilab:
 
 *****)
 
-type t
-
-type box = {
-  mutable box_value : t;
-  mutable box_refcount : int;
- }
-
-
-type symbol = {
-  symbol_name : string;
-  mutable symbol_binding : binding option;
-}
-
-and binding = {
-             binding_name : string;
-     mutable binding_locals : local_binding list;
-     mutable binding_global : global_binding option;
-}
-
-and local_binding = {
-    mutable local_box : box;
-    local_scope : scope;
-}
-
-and global_binding = {
-    mutable global_box : box;
-    mutable global_scopes : scope list;
-}
-
-and scope = {
-  scope_level : int;
-  mutable scope_locals : binding list;
-  mutable scope_globals : binding list;
-}
-
-and context = {
-  mutable context_create_empty_value : (unit -> t);
-  mutable context_string_of_value : (t -> string);
-  mutable context_increase_refcount : (t -> t);
-  mutable context_decrease_refcount : (t -> unit);
-
-  mutable context_scopes : scope list; (* never [] *)
-}
+open ScilabSymbol
 
 let set_context_create_empty_value ctx f =
   ctx.context_create_empty_value <- f
@@ -96,11 +54,6 @@ let decrease_box_refcount ctx box =
 
 exception ErrorUndefinedVariable of string
 exception CannotResumeFromToplevelScope
-
-let new_symbol name = {
-  symbol_name = name;
-  symbol_binding = None;
-}
 
 let new_scope level = {
   scope_level = level;
@@ -323,11 +276,11 @@ let global ctx sy =
       b.binding_locals <- l0 :: b.binding_locals
 
 (* remove all local scopes, and keep only the global one *)
-let rec clear ctx =
+let rec clear_all_local_scopes ctx =
   match ctx.context_scopes with
     [ _ ] -> ()
   | [] -> assert false
-  | s :: _ -> end_scope ctx; clear ctx
+  | s :: _ -> end_scope ctx; clear_all_local_scopes ctx
 
 let to_string () =
 
@@ -352,5 +305,3 @@ let to_string () =
   ) symbols;
 
   Buffer.contents buf
-
-let symbol_name sy = sy.symbol_name

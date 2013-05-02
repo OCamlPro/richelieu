@@ -10,7 +10,7 @@
  *
  *)
 
-type t = ScilabContext.t
+type t = ScilabSymbol.t
 
 type binop =
   Unknown_oper (* first, because our C code starts with 1 for plus *)
@@ -209,3 +209,5 @@ val sparsebool_get : t -> int -> int -> bool
 val sparsebool_set : t -> int -> int -> bool -> unit
 val unsafe_sparsebool_get : t -> int -> int -> bool
 val unsafe_sparsebool_set : t -> int -> int -> bool -> unit
+
+val parse_wstring : string -> ScilabString2Ast.wstring

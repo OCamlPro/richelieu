@@ -10,9 +10,12 @@
  *
  *)
 
+type wstring
+
 (* the first parameter is *not* expected to be an OCaml string, but a
    C string. *)
-val ast_of_string : string -> ScilabAst.exp
+val ast_of_wstring : wstring -> ScilabAst.exp
 
-val copy_string : string -> string
+val string_of_wstring : wstring -> string
+val wstring_of_string : string -> wstring
 val diff_strings : string -> string -> unit

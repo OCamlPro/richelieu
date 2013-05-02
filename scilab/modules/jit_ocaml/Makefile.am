@@ -39,7 +39,7 @@ include $(top_srcdir)/Makefile.incl.am
 JIT_OCAML_CPP_SOURCES = \
 			src/cpp/scicaml_ast2string.cpp \
 			src/cpp/scicaml_string2ast.cpp \
-			src/c/ocpsci_ocaml.c
+			src/cpp/scicaml_stubs.cpp
 
 libscijit_ocaml_la_CFLAGS = \
    -I$(srcdir)/includes \
@@ -92,72 +92,94 @@ OCAMLOPT=ocamlopt
 OCAMLYACC=ocamlyacc
 OCAMLLEX=ocamllex
 
-OCAML_AST_MLS = \
-	src/ocaml/scilabMisc.ml \
-	src/ocaml/scilabValue.ml \
-	src/ocaml/scilabContext.ml \
-	src/ocaml/scilabAst.ml \
-	src/ocaml/scilabTypes.ml \
-	src/ocaml/scilabAstPrinter.ml
-OCAML_AST_MLIS = \
-	src/ocaml/scilabValue.mli \
-	src/ocaml/scilabContext.mli \
-	src/ocaml/scilabAstPrinter.mli
+OCAML_COMMON_MLS = \
+	src/common/scilabSymbol.ml \
+	src/common/scilabAst.ml \
+	src/common/scilabString2Ast.ml \
+	src/common/scilabAstPrinter.ml \
+	src/common/scilabPrettyPrinter.ml
 
-OCAML_SCILAB_MLS = \
-	src/ocaml/scilabString2Ast.ml \
-	src/ocaml/scilabAst2String.ml \
-	src/ocaml/scilabInternalType.ml \
-	src/ocaml/scilabInterp.ml \
-	src/ocaml/scilabCallbacks.ml
-OCAML_SCILAB_MLIS = \
-	src/ocaml/scilabString2Ast.mli \
-	src/ocaml/scilabAst2String.mli \
-	src/ocaml/scilabInterp.mli \
-	src/ocaml/scilabCallbacks.mli
+OCAML_COMMON_MLIS = \
+	src/interp/scilabAstPrinter.mli
 
+OCAML_INTERP_MLS = \
+	src/interp/scilabMisc.ml \
+	src/interp/scilabValue.ml \
+	src/interp/scilabContext.ml \
+	src/interp/scilabTypes.ml \
+	src/interp/scilabAst2String.ml \
+	src/interp/scilabInternalType.ml \
+	src/interp/scilabInterp.ml \
+	src/interp/scilabCallbacks.ml
 
-OCAML_MLS = \
-	$(OCAML_AST_MLS) \
-	$(OCAML_SCILAB_MLS)
-
-OCAML_MLIS = \
-	$(OCAML_AST_MLIS) \
-	$(OCAML_SCILAB_MLIS)
+OCAML_INTERP_MLIS = \
+	src/interp/scilabValue.mli \
+	src/interp/scilabContext.mli \
+	src/interp/scilabAst2String.mli \
+	src/interp/scilabInternalType.mli \
+	src/interp/scilabInterp.mli \
+	src/interp/scilabCallbacks.mli
 
 OCAML_PARSER_MLS = \
-	src/ocaml/scilabContext.ml \
-	src/ocaml/scilabAst.ml \
-	src/ocaml/scilabString2Ast.ml \
-	src/ocaml/scilabPreParser.ml \
-	src/ocaml/scilabAstPrinter.ml \
-	src/ocaml/scilabPrettyPrinter.ml \
-	src/ocaml/scilabMisc.ml \
-	src/ocaml/scilabUtils.ml \
-	src/yacc/scilabParser.ml \
-	src/lex/scilabLexer.ml \
-	src/ocaml/scilabDeffRefactoring.ml \
-	src/ocaml/scilabTyper.ml \
-	src/ocaml/scilabAstStats.ml \
-	src/ocaml/scilabParserMain.ml
+	src/parser/scilabPreParser.ml \
+	src/parser/scilabParser.ml \
+	src/parser/uutf.ml \
+	src/parser/scilabLexer.ml
 
-OCAML_PARSER_CMXS = $(OCAML_PARSER_MLS:.ml=.cmx)
+OCAML_PARSER_MLIS= \
+	src/parser/uutf.mli \
+	src/parser/scilabParser.mli
 
-OCAML_CMIS = $(OCAML_MLS:.ml=.cmi) $(OCAML_MLIS:.mli=.cmi)
-OCAML_CMXS = $(OCAML_MLS:.ml=.cmx)
-OCAML_OBJS = $(OCAML_MLS:.ml=.o)
+OCAML_SCILINT_MLS = \
+	src/scilint/scilabUtils.ml \
+	src/scilint/scilabDeffRefactoring.ml \
+	src/scilint/scilabTyper.ml \
+	src/scilint/scilabAstStats.ml \
+	src/scilint/scilintMain.ml
 
-UUTF_INCL = -I +../uutf uutf.cmxa
-#CAMOMILE_INCL = -I $(shell ocamlfind query camomile)
+OCAML_SCILINT_MLIS = 
 
-OCAML_INCL= $(UUTF_INCL) -I src/ocaml -I src/yacc -I src/lex
-OCAML_PARSER_INCL = -I src/yacc
+
+######### OCAML_JIT
+
+OCAML_JIT_MLS = \
+	$(OCAML_COMMON_MLS) \
+	$(OCAML_INTERP_MLS)
+
+OCAML_JIT_MLIS = \
+	$(OCAML_COMMON_MLIS) \
+	$(OCAML_INTERP_MLIS)
+
+OCAML_JIT_CMIS = $(OCAML_JIT_MLS:.ml=.cmi) $(OCAML_JIT_MLIS:.mli=.cmi)
+OCAML_JIT_CMXS = $(OCAML_JIT_MLS:.ml=.cmx)
+OCAML_JIT_OBJS = $(OCAML_JIT_MLS:.ml=.o)
+
+########## SCILINT
+
+SCILINT_MLS = \
+	$(OCAML_COMMON_MLS) \
+	$(OCAML_PARSER_MLS) \
+	$(OCAML_SCILINT_MLS)
+
+SCILINT_MLIS = \
+	$(OCAML_COMMON_MLIS) \
+	$(OCAML_PARSER_MLIS) \
+	$(OCAML_SCILINT_MLIS)
+
+SCILINT_CMIS = $(SCILINT_MLS:.ml=.cmi) $(SCILINT_MLIS:.mli=.cmi)
+SCILINT_CMXS = $(SCILINT_MLS:.ml=.cmx)
+SCILINT_OBJS = $(SCILINT_MLS:.ml=.o)
+
+OCAML_INCL= -I src/common -I src/parser -I src/scilint -I src/interp
 OPTFLAGS = -g -c -fPIC $(OCAML_INCL)
 
 CLEANFILES= \
-	$(OCAML_CMIS)  \
-	$(OCAML_CMXS)  \
-	$(OCAML_OBJS)  \
+	$(OCAML_JIT_CMIS)  \
+	$(OCAML_JIT_CMXS)  \
+	$(OCAML_JIT_OBJS)  \
+	$(SCILINT_CMIS)  \
+	$(SCILINT_CMXS)  \
+	$(SCILINT_OBJS)  \
 	scicaml_stubs.o \
 	ocaml_parser \
 	src/lex/*.cm* \
@@ -171,12 +193,13 @@ CLEANFILES= \
 	macros/lib
 
 
-scilab_parser : $(OCAML_PARSER_CMXS)
-	$(OCAMLOPT) bigarray.cmxa str.cmxa $(UUTF_INCL) -o scilab_parser $(OCAML_PARSER_CMXS) src/c/ocpsci_ocaml.c
+scilint : $(SCILINT_CMXS)
+	$(OCAMLOPT) bigarray.cmxa str.cmxa \
+	  -o scilint $(SCILINT_CMXS)
 
 
-ocamlcode.o: $(OCAML_CMXS)
-	$(OCAMLOPT) -o ocamlcode.o -output-obj unix.cmxa $(OCAML_CMXS)
+ocamlcode.o: $(OCAML_JIT_CMXS)
+	$(OCAMLOPT) -o ocamlcode.o -output-obj unix.cmxa $(OCAML_JIT_CMXS)
 
 libasmrun.a:
 	cp $(OCAMLLIB)/libasmrun.a .
@@ -184,8 +207,10 @@ libunix.a:
 	cp $(OCAMLLIB)/libunix.a .
 
 
-depend_ocaml:
-	$(OCAMLDEP) -native $(OCAML_INCL) $(OCAML_MLS) $(OCAML_MLIS) $(OCAML_PARSER_MLS) > .depend_ocaml
+depend_ocaml: $(OCAML_PARSER_MLS)
+	$(OCAMLDEP) -native $(OCAML_INCL) \
+		$(OCAML_JIT_MLS) $(OCAML_JIT_MLIS) \
+		$(SCILINT_MLS) $(SCILINT_MLIS) > .depend_ocaml
 include .depend_ocaml
 
 ########## COMMON

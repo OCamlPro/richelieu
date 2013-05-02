@@ -24,20 +24,32 @@ open ScilabAst
 
 module Sci = ScilabInternalType
 
+
+
 type interp_result = Sci.t array
 
 exception InterpFailed
-
+exception FallbackToCPP
 exception TooManyArguments of string * int * int
 
 exception BreakExn
 exception ContinueExn
-exception ReturnExn of (ScilabContext.symbol * Sci.t) list
+exception ReturnExn of (ScilabSymbol.symbol * Sci.t) list
 
-let nargin_sy = ScilabContext.new_symbol "nargin"
-let nargout_sy = ScilabContext.new_symbol "nargout"
-let varargin_sy = ScilabContext.new_symbol "varargin"
-let varargout_sy = ScilabContext.new_symbol "varargout"
+let nargin_sy = ScilabSymbol.new_symbol "nargin"
+let nargout_sy = ScilabSymbol.new_symbol "nargout"
+let varargin_sy = ScilabSymbol.new_symbol "varargin"
+let varargout_sy = ScilabSymbol.new_symbol "varargout"
+
+let context_get ctx sy =
+  try
+    ScilabContext.get ctx sy
+  with (ScilabContext.ErrorUndefinedVariable name) as e ->
+    try
+      Sci.context_get name
+    with _ -> raise e
+
+let fallback_to_cpp = ref true
 
 type env = {
   can_break : bool;
@@ -129,7 +141,7 @@ let _ =
   let fun_names = Sci.get_funlist () in
   Array.iter (fun name ->
     let v = Sci.context_get name in
-    ScilabContext.put ctx (ScilabContext.new_symbol name) v
+    ScilabContext.put ctx (ScilabSymbol.new_symbol name) v
   ) fun_names
 
 let rec interp env exp : Sci.t option =
@@ -235,7 +247,7 @@ let rec interp env exp : Sci.t option =
 
   | Var { var_desc = SimpleVar sy } ->
     let ctx = ScilabContext.getInstance () in
-    Some (ScilabContext.get ctx sy)
+    Some (context_get ctx sy)
 
 
   | ControlExp (ForExp forExp) ->
@@ -310,11 +322,11 @@ let rec interp env exp : Sci.t option =
         match binop with
         | Sci.UnaryMinus ->
           let name = Sci.overload_buildName1 name right in
-          let f = ScilabContext.get ctx (ScilabContext.new_symbol name) in
+          let f = context_get ctx (ScilabSymbol.new_symbol name) in
           Sci.call f [| right |] [| |] 1
         | _ ->
           let name = Sci.overload_buildName2 name left right in
-          let f = ScilabContext.get ctx (ScilabContext.new_symbol name) in
+          let f = context_get ctx (ScilabSymbol.new_symbol name) in
           Sci.call f [| left; right |] [| |] 1
         )
     end
@@ -482,7 +494,7 @@ let rec interp env exp : Sci.t option =
   | Dec (FunctionDec f) ->
     let ctx = ScilabContext.getInstance () in
     let sy = f.functionDec_symbol in
-    let name = ScilabContext.symbol_name sy in
+    let name = ScilabSymbol.symbol_name sy in
     let f args opt_args iRetCount =
       ScilabContext.begin_scope ctx;
       (* TODO: we can catch exceptions and recover the current scope,
@@ -524,7 +536,7 @@ let rec interp env exp : Sci.t option =
       let returns = Array.map (fun var ->
         match var.var_desc with
           SimpleVar sy ->
-            ScilabContext.get ctx sy
+            context_get ctx sy
         | _ -> assert false
       ) f.functionDec_returns.arrayListVar_vars in
       ScilabContext.end_scope ctx;
@@ -853,8 +865,30 @@ and interp_at_least_one env exp =
   | Some t -> t
 
 let interp exp expected =
-  ScilabContext.clear (ScilabContext.getInstance ());
-  interp_rhs expected toplevel_env exp
+(*
+    TODO: reset scopes when coming up with an exception. Can we detect when
+    scopes need to be cleaned because of Scilab ?
+
+  ScilabContext.clear_all_local_scopes (ScilabContext.getInstance ()); *)
+  let t0 = Unix.gettimeofday () in
+  let res =
+    try
+      interp_rhs expected toplevel_env exp
+    with e when !fallback_to_cpp ->
+      let t1 = Unix.gettimeofday () in
+      Printf.fprintf stderr "timing : %.3fs\n%!" (t1 -. t0);
+      Printf.fprintf stderr "jit_ocaml: exception %S\n%!"
+        (Printexc.to_string e);
+      raise FallbackToCPP
+  in
+  let list = Array.to_list res in
+  let list = List.map ScilabInternalType.to_string list in
+  Printf.fprintf stderr "ocamlvalue= [%s]\n%!"
+    (String.concat "," list);
+  let t1 = Unix.gettimeofday () in
+  Printf.fprintf stderr "timing : %.3fs\n%!" (t1 -. t0);
+  if !fallback_to_cpp then raise FallbackToCPP;
+  res
 
 let unicode_of_ascii s =
   let len = String.length s in
@@ -868,7 +902,7 @@ let unicode_of_ascii s =
 let declare_macro macro_name f =
   let ctx = ScilabContext.getInstance () in
   let macro_name = unicode_of_ascii macro_name in
-  ScilabContext.put ctx (ScilabContext.new_symbol macro_name)
+  ScilabContext.put ctx (ScilabSymbol.new_symbol macro_name)
     (Sci.ocamlfunction macro_name f)
 
 exception FromToplevel
@@ -882,7 +916,7 @@ let _ =
         match Sci.get_type v with
         | Sci.RealString ->
           ScilabContext.global ctx
-            (ScilabContext.new_symbol (Sci.get_string v 0))
+            (ScilabSymbol.new_symbol (Sci.get_string v 0))
         | _ -> failwith "global with Wrong type of argument"
       ) args;
       Some [||]
@@ -905,11 +939,11 @@ let _ =
         in
         let nargin =
           try
-            ScilabContext.get ctx nargin_sy
+            context_get ctx nargin_sy
           with _ -> raise FromToplevel
         in
         let nargout =
-          try ScilabContext.get ctx nargout_sy
+          try context_get ctx nargout_sy
           with _ ->
             (* Someone is playing with "nargin"... *)
             assert false
@@ -928,9 +962,14 @@ let _ =
         Some [| Sci.double 0. |]
     );
 
+  declare_macro "ocaml" (fun args opt_args iRetCount ->
+    fallback_to_cpp := false;
+    Some [| Sci.double 0. |]
+  );
+
   let ctx = ScilabContext.getInstance () in
   let macro_name = unicode_of_ascii "SCI" in
-  ScilabContext.put ctx (ScilabContext.new_symbol macro_name)
+  ScilabContext.put ctx (ScilabSymbol.new_symbol macro_name)
     (Sci.string (unicode_of_ascii (Unix.getcwd ())));
   ()
 

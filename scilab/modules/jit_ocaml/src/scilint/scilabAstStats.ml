@@ -1,24 +1,24 @@
 open ScilabAst
 
-module StatsNode = Map.Make( 
+module StatsNode = Map.Make(
   struct
     let compare = Pervasives.compare
     type t = string
   end )
 
-module StatsFun = Map.Make( 
+module StatsFun = Map.Make(
   struct
     let compare = Pervasives.compare
     type t = string
   end )
 
-module Stats = Map.Make( 
+module Stats = Map.Make(
   struct
     let compare = Pervasives.compare
     type t = string
   end )
 
-module StatsCnst = Map.Make( 
+module StatsCnst = Map.Make(
   struct
     let compare = Pervasives.compare
     type t = string
@@ -31,7 +31,7 @@ module IdentSet = Set.Make(
   end )
 
 let init_stats () =
-  let init_list = 
+  let init_list =
     [ ("CellExp",0);("StringExp",0);("CommentExp",0);
       ("IntExp",0);("FloatExp",0);("DoubleExp",0);("BoolExp",0);
       ("SimpleVar",0);("ColonVar",0);("DollarVar",0);("ArrayListVar",0);
@@ -43,7 +43,7 @@ let init_stats () =
       ("LogicalOpExp",0);("MatrixExp",0);("CallExp",0);("Deff",0);
       ("Execstr",0) ] in
   List.fold_left (fun st (nd,nb) -> StatsNode.add nd nb st) StatsNode.empty init_list
-  
+
 let node_visited = ref 0
 
 let stats = ref (init_stats ())
@@ -72,32 +72,32 @@ let name_fun = ref ""
 
 let update_stats str =
   if StatsNode.mem str !stats
-  then 
+  then
     let cpt = StatsNode.find str !stats in
     let new_stats = StatsNode.remove str !stats in
     incr node_visited;
     StatsNode.add str (cpt + 1) new_stats
   else failwith ("no [" ^ str ^ "] in the map.")
 
-let update_stats_id_call st str = 
+let update_stats_id_call st str =
   if Stats.mem str st
-  then 
+  then
     let (cpt1, cpt2, cpt3) = Stats.find str st in
     let new_stats = Stats.remove str st in
     Stats.add str (cpt1, cpt2, cpt3 + 1) new_stats
   else Stats.add str (0, 0, 1) st
 
-let update_stats_id_var st str = 
+let update_stats_id_var st str =
   if Stats.mem str st
-  then 
+  then
     let (cpt1, cpt2, cpt3) = Stats.find str st in
     let new_stats = Stats.remove str st in
     Stats.add str (cpt1 + 1, cpt2, cpt3) new_stats
   else Stats.add str (1, 0, 0) st
 
-let update_stats_id_fun st str = 
+let update_stats_id_fun st str =
   if Stats.mem str st
-  then 
+  then
     let (cpt1, cpt2, cpt3) = Stats.find str st in
     let new_stats = Stats.remove str st in
     Stats.add str (cpt1, cpt2 + 1, cpt3) new_stats
@@ -105,7 +105,7 @@ let update_stats_id_fun st str =
 
 let update_stats_fun_init st fun_name str =
   if StatsFun.mem fun_name st
-  then 
+  then
     let (l1, l2) = StatsFun.find fun_name st in
     let new_stats = StatsFun.remove fun_name st in
     StatsFun.add fun_name (IdentSet.add str l1, l2) new_stats
@@ -113,7 +113,7 @@ let update_stats_fun_init st fun_name str =
 
 let update_stats_fun_use st fun_name str =
   if StatsFun.mem fun_name st
-  then 
+  then
     let (l1, l2) = StatsFun.find fun_name st in
     let new_stats = StatsFun.remove fun_name st in
     StatsFun.add fun_name (l1, IdentSet.add str l2) new_stats
@@ -121,19 +121,19 @@ let update_stats_fun_use st fun_name str =
 
 let update_stats_cnst st name flag =
   if StatsCnst.mem name st
-  then 
+  then
     let (cpt1, cpt2) = StatsCnst.find name st in
     let new_stats = StatsCnst.remove name st in
-    if flag 
+    if flag
     then StatsCnst.add name (cpt1 + 1, cpt2) new_stats
     else StatsCnst.add name (cpt1, cpt2 + 1) new_stats
-  else 
-    if flag 
+  else
+    if flag
     then StatsCnst.add name (1, 0) st
     else StatsCnst.add name (0, 1) st
-      
+
 let rec analyze_ast e = match e.exp_desc with
-  | AssignExp assignexp -> 
+  | AssignExp assignexp ->
       stats := update_stats "AssignExp";
       flag_assign := true;
       analyze_ast assignexp.assignExp_left_exp;
@@ -141,43 +141,43 @@ let rec analyze_ast e = match e.exp_desc with
       flag_body_assign := true;
       analyze_ast assignexp.assignExp_right_exp;
       flag_body_assign := false
-  | CallExp callexp -> 
+  | CallExp callexp ->
       analyze_callexp e;
       stats := update_stats "CallExp";
       flag_fun := true;
       analyze_ast callexp.callExp_name;
       flag_fun := false;
       Array.iter analyze_ast callexp.callExp_args
-  | CellCallExp cellcallexp -> 
+  | CellCallExp cellcallexp ->
       stats := update_stats "CellCallExp";
       analyze_ast cellcallexp.callExp_name;
       Array.iter analyze_ast cellcallexp.callExp_args
-  | ConstExp constexp -> 
+  | ConstExp constexp ->
       analyze_const_exp constexp
-  | ControlExp controlexp -> 
+  | ControlExp controlexp ->
       analyze_control_exp controlexp
-  | Dec dec -> 
+  | Dec dec ->
       analyze_dec dec
-  | FieldExp fieldexp -> 
+  | FieldExp fieldexp ->
       stats := update_stats "FieldExp";
       analyze_ast fieldexp.fieldExp_head;
       analyze_ast fieldexp.fieldExp_tail
-  | ListExp listexp -> 
+  | ListExp listexp ->
       stats := update_stats "ListExp";
       analyze_ast listexp.listExp_start;
       analyze_ast listexp.listExp_step;
       analyze_ast listexp.listExp_end
-  | MathExp mathexp -> 
+  | MathExp mathexp ->
       analyze_mathexp mathexp
-  | Var var -> 
+  | Var var ->
       analyze_var var
-  | SeqExp seqexp -> 
+  | SeqExp seqexp ->
       stats := update_stats "SeqExp";
       List.iter analyze_ast seqexp
-  | ArrayListExp exp_array -> 
+  | ArrayListExp exp_array ->
       stats := update_stats "ArrayListExp";
       Array.iter analyze_ast exp_array
-  | AssignListExp exp_array -> stats := 
+  | AssignListExp exp_array -> stats :=
       update_stats "AssignListExp";
       Array.iter analyze_ast exp_array
 
@@ -194,11 +194,11 @@ and analyze_const_exp e = match e with
 and analyze_control_exp e = match e with
   | BreakExp -> stats := update_stats "BreakExp"
   | ContinueExp -> stats := update_stats "ContinueExp"
-  | ForExp forexp -> 
+  | ForExp forexp ->
       stats := update_stats "ForExp";
       analyze_var_dec forexp.forExp_vardec;
       analyze_ast forexp.forExp_body
-  | IfExp ifexp -> 
+  | IfExp ifexp ->
       stats := update_stats "IfExp";
       analyze_ast ifexp.ifExp_test;
       analyze_ast ifexp.ifExp_then;
@@ -207,59 +207,59 @@ and analyze_control_exp e = match e with
           | Some e -> analyze_ast e
           | None -> ()
       end
-  | ReturnExp returnexp -> 
+  | ReturnExp returnexp ->
       stats := update_stats "ReturnExp";
       begin
         match returnexp.returnExp_exp with
           | Some e -> analyze_ast e
           | None -> ()
       end
-  | SelectExp selectexp -> 
+  | SelectExp selectexp ->
       stats := update_stats "SelectExp";
       analyze_ast selectexp.selectExp_selectme;
       Array.iter analyze_case selectexp.selectExp_cases;
-      begin 
+      begin
         match selectexp.selectExp_default with
           | Some (_,e) -> List.iter analyze_ast e
           | None -> ()
       end
-  | TryCatchExp trycatchexp -> 
+  | TryCatchExp trycatchexp ->
       stats := update_stats "TryCatchExp";
       List.iter analyze_ast trycatchexp.tryCatchExp_tryme;
       List.iter analyze_ast trycatchexp.tryCatchExp_catchme
-  | WhileExp whileexp -> 
+  | WhileExp whileexp ->
       stats := update_stats "WhileExp";
       analyze_ast whileexp.whileExp_test;
       analyze_ast whileexp.whileExp_body
 
-and analyze_var_dec e = 
+and analyze_var_dec e =
   stats := update_stats "VarDec";
   analyze_ast e.varDec_init
 
-and analyze_case e = 
+and analyze_case e =
   stats := update_stats "CaseExp";
   analyze_ast e.caseExp_test;
   List.iter analyze_ast e.caseExp_body
 
 and analyze_mathexp e = match e with
-  | MatrixExp matrixexp -> 
+  | MatrixExp matrixexp ->
       stats := update_stats "MatrixExp";
       analyze_matrix_exp matrixexp
-  | CellExp matrixexp -> 
+  | CellExp matrixexp ->
       stats := update_stats "CellExp";
       analyze_matrix_exp matrixexp
-  | NotExp notexp -> 
+  | NotExp notexp ->
       stats := update_stats "NotExp";
       analyze_not_exp notexp
-  | OpExp (_, args) -> 
+  | OpExp (_, args) ->
       stats := update_stats "OpExp";
       analyze_ast args.opExp_left;
       analyze_ast args.opExp_right
-  | LogicalOpExp (_, args) -> 
+  | LogicalOpExp (_, args) ->
       stats := update_stats "LogicalOpExp";
       analyze_ast args.opExp_left;
       analyze_ast args.opExp_right
-  | TransposeExp transposeexp -> 
+  | TransposeExp transposeexp ->
       stats := update_stats "TransposeExp";
       analyze_ast transposeexp.transposeExp_exp
 
@@ -267,10 +267,10 @@ and analyze_dec d = match d with
   | FunctionDec fd -> analyze_fundec fd
   | VarDec d -> analyze_var_dec d
 
-and analyze_fundec fd = 
+and analyze_fundec fd =
   stats := update_stats "FunctionDec";
-  stats_id := update_stats_id_fun !stats_id (ScilabContext.symbol_name fd.functionDec_symbol);
-  name_fun := ScilabContext.symbol_name fd.functionDec_symbol;
+  stats_id := update_stats_id_fun !stats_id (ScilabSymbol.symbol_name fd.functionDec_symbol);
+  name_fun := ScilabSymbol.symbol_name fd.functionDec_symbol;
   flag_args := true;
   Array.iter analyze_var fd.functionDec_args.arrayListVar_vars;
   flag_args := false;
@@ -287,28 +287,28 @@ and analyze_matrix_exp e =
 and analyze_matrix_line_exp e =
   Array.iter analyze_ast e.matrixLineExp_columns
 
-and analyze_not_exp e = 
+and analyze_not_exp e =
   analyze_ast e.notExp_exp
 
 and analyze_var v = match v.var_desc with
   | ColonVar -> stats := update_stats "ColonVar"
   | DollarVar -> stats := update_stats "DollarVar";
-  | SimpleVar v -> 
+  | SimpleVar v ->
       stats := update_stats "SimpleVar";
-      if !flag_fun & (ScilabContext.symbol_name v) = "deff" then stats := update_stats "Deff";
-      if !flag_fun & (ScilabContext.symbol_name v) = "execstr" then stats := update_stats "Execstr";
-      if !flag_fun_body & !flag_fun & !flag_body_assign & 
-        ((ScilabContext.symbol_name v) = "return" or (ScilabContext.symbol_name v) = "resume") then stats_ret := IdentSet.add !name_fun !stats_ret;
-      if !flag_assign then stats_id := update_stats_id_var !stats_id (ScilabContext.symbol_name v);
-      if !flag_args then stats_id := update_stats_id_var !stats_id (ScilabContext.symbol_name v);
-      if !flag_return then stats_id := update_stats_id_var !stats_id (ScilabContext.symbol_name v);
-      if !flag_fun then stats_id := update_stats_id_call !stats_id (ScilabContext.symbol_name v);
-      if !flag_assign & !flag_fun_body then stats_fun := update_stats_fun_init !stats_fun !name_fun (ScilabContext.symbol_name v);
-      if (not !flag_fun) & (not !flag_assign) & !flag_fun_body then stats_fun := update_stats_fun_use !stats_fun !name_fun (ScilabContext.symbol_name v);
-  | ArrayListVar var_array -> 
+      if !flag_fun & (ScilabSymbol.symbol_name v) = "deff" then stats := update_stats "Deff";
+      if !flag_fun & (ScilabSymbol.symbol_name v) = "execstr" then stats := update_stats "Execstr";
+      if !flag_fun_body & !flag_fun & !flag_body_assign &
+        ((ScilabSymbol.symbol_name v) = "return" or (ScilabSymbol.symbol_name v) = "resume") then stats_ret := IdentSet.add !name_fun !stats_ret;
+      if !flag_assign then stats_id := update_stats_id_var !stats_id (ScilabSymbol.symbol_name v);
+      if !flag_args then stats_id := update_stats_id_var !stats_id (ScilabSymbol.symbol_name v);
+      if !flag_return then stats_id := update_stats_id_var !stats_id (ScilabSymbol.symbol_name v);
+      if !flag_fun then stats_id := update_stats_id_call !stats_id (ScilabSymbol.symbol_name v);
+      if !flag_assign & !flag_fun_body then stats_fun := update_stats_fun_init !stats_fun !name_fun (ScilabSymbol.symbol_name v);
+      if (not !flag_fun) & (not !flag_assign) & !flag_fun_body then stats_fun := update_stats_fun_use !stats_fun !name_fun (ScilabSymbol.symbol_name v);
+  | ArrayListVar var_array ->
       stats := update_stats "ArrayListVar";
       Array.iter analyze_var var_array
-  
+
 
 and analyze_callexp e =
   match e.exp_desc with
@@ -320,9 +320,9 @@ and analyze_callexp e =
                 begin
                   match n.var_desc with
                     | SimpleVar v ->
-                        let fun_name = ScilabContext.symbol_name v in
+                        let fun_name = ScilabSymbol.symbol_name v in
                         if fun_name = "deff" or fun_name = "execstr"
-                        then 
+                        then
                         begin
                           Array.iter (fun arg ->
                             match arg.exp_desc with
@@ -342,7 +342,7 @@ let print_stats () =
   let total = ref 0. in
   StatsNode.iter (fun _ v -> total := !total +. (float_of_int v)) !stats;
   Printf.printf "Node visited : %.0f\n" !total;
-  StatsNode.iter (fun k v -> 
+  StatsNode.iter (fun k v ->
     Printf.printf "%s : %i(%.3f%%)\n" k v (((float_of_int v)/.(!total)) *. 100.)) !stats
 
 
@@ -362,17 +362,17 @@ let print_stats_id () =
   let avr_ident_init = ref 0.0 in
   let nbr_fun_total = ref 0 in
   let str = ref "" in
-  Stats.iter (fun k (v1, v2, v3) -> 
+  Stats.iter (fun k (v1, v2, v3) ->
     (* Printf.printf "%s %i" k (String.length k); *)
     let len = String.length k in
     (* if ((len/4) > 20)  *)
     (* then str := String.sub k 0 80 *)
     (* else str := k ^ (String.make (20 - (len/4)) ' '); *)
-    if ((len) > 30) 
+    if ((len) > 30)
     then str := String.sub k 0 30
     else str := k ^ (String.make (30 - (len)) ' ');
-    if (v1 = 0 & v2 = 1) then 
-      begin 
+    if (v1 = 0 & v2 = 1) then
+      begin
         incr nbr_unique_fun_name;
         nbr_unique_fun_call := !nbr_unique_fun_call + v3;
         if len < !len_fun_name_min then len_fun_name_min := len;
@@ -384,13 +384,13 @@ let print_stats_id () =
     if (v1 = 0 & v2 = 1 & v3 > 0 & len > 10) then incr nbr_fun_call_guest;
     nbr_fun_name := !nbr_fun_name + v2;
     nbr_fun_call := !nbr_fun_call + v3;
-    Printf.printf "%s | %i | %i | %i\n" 
-      !str 
+    Printf.printf "%s | %i | %i | %i\n"
+      !str
       v1
-      v2 
+      v2
       v3) !stats_id;
-  Printf.printf 
-    "Unique function name : %i(%.3f%%)\n" 
+  Printf.printf
+    "Unique function name : %i(%.3f%%)\n"
     !nbr_unique_fun_name
     (((float_of_int !nbr_unique_fun_name)/.(float_of_int !nbr_fun_name)) *. 100.);
   Printf.printf
@@ -401,19 +401,19 @@ let print_stats_id () =
   Printf.printf
     "%% call to unique function detected with length : %.3f%%\n"
     (((float_of_int !nbr_fun_call_guest)/.(float_of_int !nbr_unique_fun_name)) *. 100.);
-  Printf.printf 
-    "Call to unique function : %i(%.3f%%)\n" 
+  Printf.printf
+    "Call to unique function : %i(%.3f%%)\n"
     !nbr_unique_fun_call
     (((float_of_int !nbr_unique_fun_call)/.(float_of_int !nbr_fun_call)) *. 100.);
-  StatsFun.iter (fun k (l1, l2) -> 
+  StatsFun.iter (fun k (l1, l2) ->
     nbr_ident_fun_body_init := 0;
     nbr_ident_fun_body_use := 0;
     Printf.printf "%s :\n" k;
-    IdentSet.iter (fun x -> 
+    IdentSet.iter (fun x ->
       Printf.printf " -> %s\n" x;
-      if IdentSet.exists (fun y -> x = y) l2 
+      if IdentSet.exists (fun y -> x = y) l2
       then incr nbr_ident_fun_body_init
-      else 
+      else
         begin
           incr nbr_ident_fun_body_no_init;
           if Stats.mem k !stats_id
@@ -424,27 +424,27 @@ let print_stats_id () =
             if v1 = 0 & v2 = 1 then incr nbr_ident_fun_body_no_init_unique;
         end) l1;
     Printf.printf "\n";
-    IdentSet.iter (fun x -> 
+    IdentSet.iter (fun x ->
       Printf.printf " <- %s\n" x;
       incr nbr_ident_fun_body_use) l2;
     if !nbr_ident_fun_body_init <> 0 & !nbr_ident_fun_body_use <> 0 then
       let pourc = (((float_of_int !nbr_ident_fun_body_init)/.(float_of_int !nbr_ident_fun_body_use)) *. 100.) in
       incr nbr_fun_total;
       avr_ident_init := !avr_ident_init +. pourc;
-      Printf.printf 
+      Printf.printf
         "\n%% ident used in %s that have been initialised in the function body : %f %%\n\n"
         k
         pourc;
-    else 
+    else
       begin
         incr nbr_fun_total;
-        Printf.printf 
+        Printf.printf
           "\n%% ident used in %s that have been initialised in the function body : %f %%\n\n"
           k
           100.0
       end
   ) !stats_fun;
-  Printf.printf 
+  Printf.printf
     "\nAverage %% ident used that have been initialised in the function body : %f %%\n\n"
     ((!avr_ident_init)/.(float_of_int !nbr_fun_total));
   Printf.printf
@@ -452,15 +452,11 @@ let print_stats_id () =
     !nbr_ident_fun_body_no_init_unique
     !nbr_ident_fun_body_no_init
     (((float_of_int !nbr_ident_fun_body_no_init_unique)/.(float_of_int !nbr_ident_fun_body_no_init)) *. 100.);
-  StatsCnst.iter (fun n (cpt1, cpt2) -> 
+  StatsCnst.iter (fun n (cpt1, cpt2) ->
     Printf.printf "\n %s : %i %i\n" n cpt1 cpt2;
     Printf.printf "%% call with String Constant as argument : %.3f%%" (((float_of_int cpt1)/.(float_of_int (cpt1 + cpt2))) *. 100.);
   ) !stats_cnst;
   Printf.printf "\n%i(%.3f%%) functions use \"[vars] = return()\" statement\n" (IdentSet.cardinal !stats_ret) (((float_of_int (IdentSet.cardinal !stats_ret))/.(float_of_int !nbr_fun_name)) *. 100.)
-  
-  
-    
-    
 
 
 
@@ -472,7 +468,11 @@ let print_stats_id () =
 
 
 
-    
+
+
+
+
+
 
 
 

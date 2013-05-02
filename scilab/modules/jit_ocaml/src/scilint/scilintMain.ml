@@ -43,7 +43,7 @@ let get_length ic =
   let c3 = int_of_char (String.unsafe_get s 3) in
   c0 + ((c1 + ((c2 + (c3 lsl 8)) lsl 8)) lsl 8)
 
-let equal_test file = 
+let equal_test file =
     if List.exists (Filename.check_suffix file) list_ext_bin
     then
       let ch = open_in file in
@@ -53,7 +53,8 @@ let equal_test file =
       let buf = Buffer.create len in
       Buffer.add_channel buf ch len;
       let s = Buffer.contents buf in
-      let ast1 = ScilabString2Ast.ast_of_string s in
+      let ast1 = ScilabString2Ast.ast_of_wstring
+          (ScilabString2Ast.wstring_of_string s) in
       Printf.printf "AST from SCILAB : \n";
       print_endline (ScilabAstPrinter.to_string ast1);
       let file = Filename.chop_suffix file ".bin" in
@@ -66,7 +67,7 @@ let equal_test file =
         let ast = ScilabParser.program ScilabLexer.token lexbuf in
         begin
           match ast with
-            | ScilabAst.Exp exp ->  
+            | ScilabAst.Exp exp ->
                 print_endline (ScilabAstPrinter.to_string exp);
                 if ScilabUtils.is_equal (ScilabAst.Exp ast1) ast
                 then print_endline "-> eqOK\n"
@@ -114,14 +115,14 @@ let run_deff file =
     let ast = ScilabParser.program ScilabLexer.token lexbuf in
     begin
       match ast with
-        | ScilabAst.Exp exp -> 
+        | ScilabAst.Exp exp ->
             print_endline "-> OK\n";
             ScilabDeffRefactoring.refactor_deff exp
         | _ -> print_endline "-> Error not an Exp\n"
     end;
     flush stdout;
     close_in ch
-  with 
+  with
     | Parsing.Parse_error ->
         let curr = lexbuf.Lexing.lex_curr_p in
         let line = curr.Lexing.pos_lnum in
@@ -148,7 +149,7 @@ let run_deff file =
         print_lex_infos tok line cnum;
         flush stdout;
         close_in ch
-    | _ as err -> raise err 
+    | _ as err -> raise err
 
 
 let run_test file =
@@ -166,7 +167,7 @@ let run_test file =
     end;
     flush stdout;
     close_in ch
-  with 
+  with
     | Parsing.Parse_error ->
         let curr = lexbuf.Lexing.lex_curr_p in
         let line = curr.Lexing.pos_lnum in
@@ -193,7 +194,7 @@ let run_test file =
         print_lex_infos tok line cnum;
         flush stdout;
         close_in ch
-    | _ as err -> raise err 
+    | _ as err -> raise err
 
 let run_type_file file =
   let ch = if file = "" then stdin else open_in file in
@@ -205,7 +206,7 @@ let run_type_file file =
     let ast = ScilabParser.program ScilabLexer.token lexbuf in
     begin
       match ast with
-        | ScilabAst.Exp exp -> 
+        | ScilabAst.Exp exp ->
             print_endline "-> OK\n";
             print_endline (ScilabAstPrinter.to_string exp);
             ScilabTyper.type_ast exp
@@ -213,7 +214,7 @@ let run_type_file file =
     end;
     flush stdout;
     close_in ch
-  with 
+  with
     | Parsing.Parse_error ->
         let curr = lexbuf.Lexing.lex_curr_p in
         let line = curr.Lexing.pos_lnum in
@@ -240,7 +241,7 @@ let run_type_file file =
         print_lex_infos tok line cnum;
         flush stdout;
         close_in ch
-    | _ as err -> raise err 
+    | _ as err -> raise err
 
 let run_analyze_file file =
   let ch = if file = "" then stdin else open_in file in
@@ -252,14 +253,14 @@ let run_analyze_file file =
     let ast = ScilabParser.program ScilabLexer.token lexbuf in
     begin
       match ast with
-        | ScilabAst.Exp exp -> 
+        | ScilabAst.Exp exp ->
             print_endline "-> OK\n";
             ScilabAstStats.analyze_ast exp
         | _ -> print_endline "-> Error not an Exp\n"
     end;
     flush stdout;
     close_in ch
-  with 
+  with
     | Parsing.Parse_error ->
         let curr = lexbuf.Lexing.lex_curr_p in
         let line = curr.Lexing.pos_lnum in
@@ -286,7 +287,7 @@ let run_analyze_file file =
         print_lex_infos tok line cnum;
         flush stdout;
         close_in ch
-    | _ as err -> raise err 
+    | _ as err -> raise err
 
 let rec run_tests fun_iter dirname =
   let files = Sys.readdir dirname in
@@ -317,10 +318,10 @@ let _ =
 
           (* Scilab 5' tests *)
           (* scilab5_modules_path*)
-          
+
           (* Richelieu' tests *)
           (* richelieu_test_path *)
-          
+
           (* Scilab forge *)
           scilab_forge_test_path
 

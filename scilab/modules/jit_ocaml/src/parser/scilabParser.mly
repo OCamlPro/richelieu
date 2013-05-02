@@ -19,7 +19,7 @@
   let create_dummy_exp () =
     create_exp dummy_loc (ConstExp (CommentExp { commentExp_comment = "dummy exp" }))
 
-  let new_symbol s = ScilabContext.new_symbol s
+  let new_symbol s = ScilabSymbol.new_symbol s
   let simpleVar s = SimpleVar (new_symbol s)
 
 %}
@@ -161,11 +161,11 @@ expression :
 | variable %prec TOPLEVEL                       { $1 }
 | implicitFunctionCall  %prec TOPLEVEL          { let list = List.rev $1 in
                                                   let caller = List.hd list in
-                                                  let args = List.tl list in 
+                                                  let args = List.tl list in
                                                   let off_st = Parsing.rhs_start_pos 1 in
                                                   let off_end = Parsing.rhs_end_pos 1 in
-                                                  let loc = create_loc off_st off_end in 
-                                                  let callexp = {callExp_name = caller; 
+                                                  let loc = create_loc off_st off_end in
+                                                  let callexp = {callExp_name = caller;
                                                                  callExp_args = Array.of_list (List.rev args) } in
                                                   create_exp loc (CallExp callexp) }
 | BREAK						{ let off_st = Parsing.rhs_start_pos 1 in
@@ -187,7 +187,7 @@ expression :
 /* IMPLICIT FUNCTIONCALL */
 /* Bash-like : foo bar titi <=> foo('bar', 'titi') */
 implicitFunctionCall :
-| implicitFunctionCall implicitCallable         { $2::$1 } 
+| implicitFunctionCall implicitCallable         { $2::$1 }
 | ID implicitCallable                           { let varloc_st = Parsing.rhs_start_pos 1 in
                                                   let varloc_end = Parsing.rhs_end_pos 1 in
                                                   let varloc = create_loc varloc_st varloc_end in
@@ -265,7 +265,7 @@ implicitCallable :
 /* FUNCTIONCALL */
 functionCall :
 | simpleFunctionCall                            { $1 }
-| specificFunctionCall                          { $1 } 
+| specificFunctionCall                          { $1 }
 /*| LPAREN functionCall RPAREN                    { $2 }*/
 
 specificFunctionCall :
@@ -580,7 +580,7 @@ idList :
                                                   [varexp] }
 
 functionDeclarationBreak :
-| lineEnd			{ } 
+| lineEnd			{ }
 | SEMI				{ }
 | SEMI EOL			{ }
 | COMMA				{ }
@@ -1631,7 +1631,7 @@ operation :
                                                   let minloc_end = Parsing.rhs_end_pos 2 in
                                                   let oploc = create_loc minloc_st minloc_end in
                                                   let oper = OpExp_unaryMinus in
-                                                  let dummy_exp = DoubleExp 
+                                                  let dummy_exp = DoubleExp
                                                     { doubleExp_value = 0.0;
                                                       doubleExp_bigDouble = () } in
                                                   let left = create_exp dummy_loc (ConstExp dummy_exp) in
@@ -1644,7 +1644,7 @@ operation :
                                                   let minloc_end = Parsing.rhs_end_pos 2 in
                                                   let oploc = create_loc minloc_st minloc_end in
                                                   let oper = OpExp_unaryMinus in
-                                                  let dummy_exp = DoubleExp 
+                                                  let dummy_exp = DoubleExp
                                                     { doubleExp_value = 0.0;
                                                       doubleExp_bigDouble = () } in
                                                   let left = create_exp dummy_loc (ConstExp dummy_exp) in
@@ -1838,14 +1838,14 @@ variable :
 /*| LPAREN variable RPAREN			{ $2 }*/
 | LPAREN variableFields RPAREN			{ $2 }
 | comparison                                    { $1 }
-| variable LPAREN functionArgs RPAREN           { let callexp = 
+| variable LPAREN functionArgs RPAREN           { let callexp =
                                                     { callExp_name = $1;
                                                       callExp_args = Array.of_list (List.rev $3)} in
                                                   let fcall_st = Parsing.rhs_start_pos 1 in
                                                   let fcall_end = Parsing.rhs_end_pos 4 in
                                                   let loc = create_loc fcall_st fcall_end in
                                                   create_exp loc (CallExp callexp) }
-| functionCall LPAREN functionArgs RPAREN       { let callexp = 
+| functionCall LPAREN functionArgs RPAREN       { let callexp =
                                                     { callExp_name = $1;
                                                       callExp_args = Array.of_list (List.rev $3)} in
                                                   let fcall_st = Parsing.rhs_start_pos 1 in
@@ -1865,7 +1865,7 @@ variableFields :
                                                   let loc =
                                                     create_loc off_st off_end in
                                                   create_exp loc (SeqExp []) }
-    
+
 
 /* IF THEN ELSE */
 ifControl :
@@ -2576,7 +2576,7 @@ variableDeclaration :
                                                                   let off_end = Parsing.rhs_end_pos 3 in
                                                                   let loc = create_loc off_st off_end in
                                                                   create_exp loc assignexp }
-| functionCall ASSIGN functionCall %prec HIGHLEVEL              { let assignexp = 
+| functionCall ASSIGN functionCall %prec HIGHLEVEL              { let assignexp =
                                                                     AssignExp {assignExp_left_exp = $1;
                                                                                assignExp_right_exp = $3 } in
                                                                   let off_st = Parsing.rhs_start_pos 1 in
@@ -2589,7 +2589,7 @@ variableDeclaration :
                                                                   let cvar_exp =
                                                                     Var { var_location = loc;
                                                                           var_desc = ColonVar } in
-                                                                  let assignexp = 
+                                                                  let assignexp =
                                                                     AssignExp {assignExp_left_exp = $1;
                                                                                assignExp_right_exp = create_exp loc cvar_exp } in
                                                                   let off_st = Parsing.rhs_start_pos 1 in
@@ -2602,7 +2602,7 @@ variableDeclaration :
                                                                   let cvar_exp =
                                                                     Var { var_location = loc;
                                                                           var_desc = ColonVar } in
-                                                                  let assignexp = 
+                                                                  let assignexp =
                                                                     AssignExp {assignExp_left_exp = $1;
                                                                                assignExp_right_exp = create_exp loc cvar_exp } in
                                                                   let off_st = Parsing.rhs_start_pos 1 in

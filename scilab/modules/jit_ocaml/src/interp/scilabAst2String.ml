@@ -11,7 +11,7 @@
  *)
 
 open ScilabAst
-open ScilabContext
+open ScilabSymbol
 
 let debug = false
 
