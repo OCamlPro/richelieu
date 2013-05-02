@@ -15,7 +15,7 @@ scilabParser.mli
 scilabLexer.ml
 scilab_parser
 *.Makefile.in
-scilint
+./scilint
 src/parser/scilabParser.output
 ocp-build.root
 _obuild
