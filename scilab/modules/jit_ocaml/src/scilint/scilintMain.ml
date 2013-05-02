@@ -3,10 +3,16 @@ let test_flag = ref false
 let equal_flag = ref false
 let analyze_flag = ref false
 let type_flag = ref false
-let args = [("-t", Arg.Unit (fun () -> test_flag := true), ": run tests");
-            ("-eq", Arg.String (fun s -> equal_flag := true; file := s), ": test c++/ocaml ast, file is in intermediate format");
-            ("-a", Arg.String (fun s -> analyze_flag := true; file := s), ": analyze scilab source code");
-            ("-typ", Arg.String (fun s -> type_flag := true; file := s), ": try to type a scilab programe")]
+let args = Arg.align [
+  "-t", Arg.Unit (fun () -> test_flag := true),
+  " Run tests";
+  "-eq", Arg.String (fun s -> equal_flag := true; file := s),
+  "file Test c++/ocaml ast, file is in intermediate format";
+  "-a", Arg.String (fun s -> analyze_flag := true; file := s),
+  "file Analyze scilab source code";
+  "-typ", Arg.String (fun s -> type_flag := true; file := s),
+  "file Try to type a scilab programe"
+  ]
 let usage = "Usage: " ^ Sys.argv.(0) ^ " [-t] [-eq file] [-analyze file] [file]"
 
 (* let test_parser ast = *)
@@ -19,6 +25,7 @@ let list_ext = [ ".sci"; ".sce"; ".tst" ]
 
 let list_ext_bin = [ ".sci.bin"; ".sce.bin"; ".tst.bin" ]
 
+(*
 let scilab5_modules_path = "/home/michael/scilab.5/scilab-5.4.0/modules/"
 
 let scilab6_test_path = "/home/michael/scilab.6/scilab/test/"
@@ -26,6 +33,7 @@ let scilab6_test_path = "/home/michael/scilab.6/scilab/test/"
 let richelieu_test_path = "/home/michael/dev_sci/richelieu/"
 
 let scilab_forge_test_path = "/home/michael/test_forge/mirror.forge.scilab.org-1.4GB/"
+*)
 
 let print_exn_infos =
   Printf.printf "Error at token : %s (line %i, character %i) \n\n"

@@ -1,10 +1,6 @@
 open ScilabAst
 
-module StatsNode = Map.Make(
-  struct
-    let compare = Pervasives.compare
-    type t = string
-  end )
+module StatsNode = Map.Make(String)
 
 module StatsFun = Map.Make(
   struct
