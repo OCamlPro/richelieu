@@ -94,6 +94,7 @@ OCAMLLEX=ocamllex
 
 OCAML_COMMON_MLS = \
 	src/common/scilabSymbol.ml \
+	src/common/scilabTypedContext.ml \
 	src/common/scilabAst.ml \
 	src/common/scilabString2Ast.ml \
 	src/common/scilabAstPrinter.ml \

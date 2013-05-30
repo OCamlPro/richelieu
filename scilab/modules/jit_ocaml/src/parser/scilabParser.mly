@@ -2,6 +2,8 @@
   open ScilabAst
   open Lexing
 
+  module Sy = ScilabTypedContext
+
   let extract_str_from_strExp exp = match exp.exp_desc with
     | ConstExp (StringExp strexp) -> strexp.stringExp_value
     | _ -> failwith "shouldn't happen"
@@ -19,7 +21,7 @@
   let create_dummy_exp () =
     create_exp dummy_loc (ConstExp (CommentExp { commentExp_comment = "dummy exp" }))
 
-  let new_symbol s = ScilabSymbol.new_symbol s
+  let new_symbol s = Sy.new_symbol s
   let simpleVar s = SimpleVar (new_symbol s)
 
 %}
@@ -1836,7 +1838,13 @@ variable :
                                                   let loc = create_loc off_st off_end in
                                                   create_exp loc (ConstExp doubleexp) }
 /*| LPAREN variable RPAREN			{ $2 }*/
-| LPAREN variableFields RPAREN			{ $2 }
+| LPAREN variableFields RPAREN			{ let off_st = Parsing.rhs_start_pos 1 in
+                                                  let off_end = Parsing.rhs_end_pos 3 in
+                                                  let loc =
+                                                    create_loc off_st off_end in
+                                                  let list_exp = $2 in
+                                                  let arr_listexp = ArrayListExp (Array.of_list list_exp) in
+                                                  create_exp loc arr_listexp }
 | comparison                                    { $1 }
 | variable LPAREN functionArgs RPAREN           { let callexp =
                                                     { callExp_name = $1;
@@ -1858,13 +1866,9 @@ variableField :
 | functionCall        { $1 }
 
 variableFields :
-| variableFields COMMA variableFields           { $1 }
-| variableField                                 { $1 }
-| /* Empty */                                   { let off_st = Parsing.rhs_start_pos 1 in
-                                                  let off_end = Parsing.rhs_end_pos 1 in
-                                                  let loc =
-                                                    create_loc off_st off_end in
-                                                  create_exp loc (SeqExp []) }
+| variableField COMMA variableFields           { $1::$3 }
+| variableField                                { [$1] }
+| /* Empty */                                  { [] }
 
 
 /* IF THEN ELSE */
@@ -2552,12 +2556,11 @@ matrixOrCellColumnsBreak :
 | matrixOrCellColumnsBreak COMMA				{  }
 | COMMA								{  }
 
-
 /* VARAIABLE DECLARATION */
 variableDeclaration :
 | assignable ASSIGN variable %prec HIGHLEVEL                    { let assignexp =
-                                                                    AssignExp {assignExp_left_exp = $1;
-                                                                               assignExp_right_exp = $3 } in
+                                                                    AssignExp { assignExp_left_exp = $1;
+                                                                                assignExp_right_exp = $3 } in
                                                                   let off_st = Parsing.rhs_start_pos 1 in
                                                                   let off_end = Parsing.rhs_end_pos 3 in
                                                                   let loc = create_loc off_st off_end in
