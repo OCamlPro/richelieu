@@ -2,7 +2,7 @@
   open ScilabAst
   open Lexing
 
-  module Sy = ScilabTypedContext
+  module Sy = ScilabSymbol
 
   let extract_str_from_strExp exp = match exp.exp_desc with
     | ConstExp (StringExp strexp) -> strexp.stringExp_value

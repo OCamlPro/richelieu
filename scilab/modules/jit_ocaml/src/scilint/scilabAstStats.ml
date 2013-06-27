@@ -209,6 +209,11 @@ and analyze_control_exp e = match e with
       end
   | ReturnExp returnexp ->
       stats := update_stats "ReturnExp";
+      if !flag_fun_body & !flag_body_assign
+      then 
+        begin
+          stats_ret := IdentSet.add !name_fun !stats_ret;
+        end;
       begin
         match returnexp.returnExp_exp with
           | Some e -> analyze_ast e
@@ -297,8 +302,6 @@ and analyze_var v = match v.var_desc with
       stats := update_stats "SimpleVar";
       if !flag_fun & (ScilabSymbol.symbol_name v) = "deff" then stats := update_stats "Deff";
       if !flag_fun & (ScilabSymbol.symbol_name v) = "execstr" then stats := update_stats "Execstr";
-      if !flag_fun_body & !flag_fun & !flag_body_assign &
-        ((ScilabSymbol.symbol_name v) = "return" or (ScilabSymbol.symbol_name v) = "resume") then stats_ret := IdentSet.add !name_fun !stats_ret;
       if !flag_assign then stats_id := update_stats_id_var !stats_id (ScilabSymbol.symbol_name v);
       if !flag_args then stats_id := update_stats_id_var !stats_id (ScilabSymbol.symbol_name v);
       if !flag_return then stats_id := update_stats_id_var !stats_id (ScilabSymbol.symbol_name v);
@@ -329,7 +332,7 @@ and analyze_callexp e =
                               | ConstExp _ -> ()
                               | _ -> flag_cnst := false
                           ) ce.callExp_args;
-                          if not !flag_cnst then Printf.printf "%s\n" (ScilabAstPrinter.to_string e);
+                          (* if not !flag_cnst then Printf.printf "%s\n" (ScilabAstPrinter.to_string e); *)
                           stats_cnst := update_stats_cnst !stats_cnst fun_name !flag_cnst
                         end
                     | _ -> ()
@@ -459,23 +462,57 @@ let print_stats_id () =
   Printf.printf "\n%i(%.3f%%) functions use \"[vars] = return()\" statement\n" (IdentSet.cardinal !stats_ret) (((float_of_int (IdentSet.cardinal !stats_ret))/.(float_of_int !nbr_fun_name)) *. 100.)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+let print_fun_stats () =
+  Printf.printf "\n  ================== Unsafe Functions Stats ===================== \n";
+  let cpt_total = !ScilabFunctionAnalyze.cpt_analyze_fun in
+  let cpt_fun = ref 0 in
+  let cpt_fun_unique = ref 0 in
+  let cpt_fun_ret = ref 0 in
+  let cpt_escaped_sy = ref 0 in
+  let cpt_escaped_sy_unique = ref 0 in
+  let cpt_returned_sy = ref 0 in
+  let unsf_fun = !ScilabFunctionAnalyze.table_unsafe_fun in
+  ScilabFunctionAnalyze.UnsafeFunSy.iter (fun fsy (esc_set, ret_set) ->
+    incr cpt_fun;
+    let fn = ScilabSymbol.symbol_name fsy in
+    if Stats.mem fn !stats_id then
+      begin
+        let (v1, v2, _) = Stats.find fn !stats_id in
+        if (v1 + v2) = 1 then incr cpt_fun_unique;
+        ScilabFunctionAnalyze.SetSy.iter (fun sy -> 
+          incr cpt_escaped_sy;
+          let syn = ScilabSymbol.symbol_name sy in
+          if Stats.mem syn !stats_id then
+            begin
+              let (v1, v2, _) = Stats.find syn !stats_id in
+              if (v1 + v2) = 1 then incr cpt_escaped_sy_unique;
+            end
+          else incr cpt_escaped_sy_unique
+        ) esc_set;
+        if ScilabFunctionAnalyze.SetSy.cardinal ret_set <> 0 
+        then
+          begin
+            incr cpt_fun_ret;
+            ScilabFunctionAnalyze.SetSy.iter (fun sy -> incr cpt_returned_sy) ret_set
+          end
+      end
+    else incr cpt_fun_unique
+  ) unsf_fun;
+  Printf.printf 
+    "\n Unsafe functions : %i out of %i (%.3f%%) // Escaped var \n" 
+    !cpt_fun 
+    cpt_total 
+    (((float_of_int !cpt_fun)/.(float_of_int cpt_total)) *. 100.);
+  Printf.printf 
+    "\n Unsafe functions : %i out of %i (%.3f%%) // Returned var \n" 
+    !cpt_fun_ret 
+    cpt_total 
+    (((float_of_int !cpt_fun_ret)/.(float_of_int cpt_total)) *. 100.);
+  Printf.printf
+    "\n Unique named unsafe functions : %i(%.3f%%)\n"
+    !cpt_fun_unique
+    (((float_of_int !cpt_fun_unique)/.(float_of_int !cpt_fun)) *. 100.);
+  Printf.printf
+    "\n Unique named escaped symbols : %i(%.3f%%)\n"
+    !cpt_escaped_sy_unique
+    (((float_of_int !cpt_escaped_sy_unique)/.(float_of_int !cpt_escaped_sy)) *. 100.)
