@@ -15,6 +15,8 @@ let usage = "Usage: " ^ Sys.argv.(0) ^ " [-t] [-eq file] [-analyze file] [file]"
 (*   print_endline s *)
 (*   (\* read binary file generates by scilab's parser *\) *)
 
+let cpt_files = ref 0
+
 let list_ext = [ ".sci"; ".sce"; ".tst" ]
 
 let list_ext_bin = [ ".sci.bin"; ".sce.bin"; ".tst.bin" ]
@@ -209,7 +211,9 @@ let run_type_file file =
         | ScilabAst.Exp exp ->
             print_endline "-> OK\n";
             print_endline (ScilabAstPrinter.to_string exp);
-            ScilabTyper.type_ast exp
+            ScilabFunctionAnalyze.analyze exp;
+            ScilabFunctionAnalyze.print ();
+            (* ScilabTyper.type_ast exp *)
         | _ -> print_endline "-> Error not an Exp\n"
     end;
     flush stdout;
@@ -255,7 +259,9 @@ let run_analyze_file file =
       match ast with
         | ScilabAst.Exp exp ->
             print_endline "-> OK\n";
-            ScilabAstStats.analyze_ast exp
+            incr cpt_files;
+            ScilabAstStats.analyze_ast exp;
+            ScilabFunctionAnalyze.analyze exp
         | _ -> print_endline "-> Error not an Exp\n"
     end;
     flush stdout;
@@ -326,9 +332,10 @@ let _ =
           scilab_forge_test_path
 
          (* "/home/michael/git_scilab/richelieu/scilab/modules/jit_ocaml/test_stats" *)
-         ] in
-        List.iter (run_tests run_analyze_file) dir_tests;
-        (* ScilabAstStats.print_stats_id () *)
+        ] in
+      List.iter (run_tests run_analyze_file) dir_tests;
+      ScilabAstStats.print_fun_stats ();
+      Printf.printf "\n Analyzes run on %i files.\n" !cpt_files
     end
   else
     if !equal_flag
