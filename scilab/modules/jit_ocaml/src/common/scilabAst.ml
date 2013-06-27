@@ -371,7 +371,7 @@ and var = {
 and var_desc =
 | ColonVar  (* a ; *)
 | DollarVar (* a $ *)
-| SimpleVar of ScilabSymbol.symbol
+| SimpleVar of  ScilabSymbol.symbol
 | ArrayListVar of var array  (* should never occur, automatically encoded
     in functionDec *)
 

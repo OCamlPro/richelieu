@@ -94,7 +94,6 @@ OCAMLLEX=ocamllex
 
 OCAML_COMMON_MLS = \
 	src/common/scilabSymbol.ml \
-	src/common/scilabTypedContext.ml \
 	src/common/scilabAst.ml \
 	src/common/scilabString2Ast.ml \
 	src/common/scilabAstPrinter.ml \
@@ -132,9 +131,9 @@ OCAML_PARSER_MLIS= \
 	src/parser/scilabParser.mli
 
 OCAML_SCILINT_MLS = \
+	src/scilint/scilabFunctionAnalyze.ml \
 	src/scilint/scilabUtils.ml \
 	src/scilint/scilabDeffRefactoring.ml \
-	src/scilint/scilabTyper.ml \
 	src/scilint/scilabAstStats.ml \
 	src/scilint/scilintMain.ml
 
